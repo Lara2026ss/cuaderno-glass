@@ -1,0 +1,52 @@
+/* =========================================================
+   CUADERNO GLASS PRO 4.0 — RESPONSIVE DESIGN
+   ========================================================= */
+
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1001;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 20px var(--primary-glow);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+}
+.mobile-overlay.active { display: block; }
+
+@media (max-width: 1024px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    width: 290px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-menu-btn { display: flex; }
+  main { padding: 24px 20px; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  main { padding: 18px 14px; }
+  .view-header h1 { font-size: 1.7rem; }
+  .metric-row { grid-template-columns: 1fr 1fr; }
+  .top-bar { flex-direction: column; align-items: stretch; }
+  .search-box { max-width: 100%; }
+}

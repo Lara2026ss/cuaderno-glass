@@ -1,0 +1,129 @@
+/* =========================================================
+   CUADERNO GLASS PRO 4.0 — SISTEMA DE DISEÑO ULTRA-GLASS
+   ========================================================= */
+
+:root {
+  --bg-base: #060914;
+  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 50%),
+             radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.22) 0px, transparent 50%),
+             radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.25) 0px, transparent 50%),
+             radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.24) 0px, transparent 50%);
+  
+  --glass-surface: rgba(18, 24, 45, 0.68);
+  --glass-surface-hover: rgba(28, 36, 65, 0.82);
+  --glass-card: rgba(23, 30, 54, 0.58);
+  --glass-subtle: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-focus: rgba(129, 140, 248, 0.65);
+  --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-soft: #64748b;
+  
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-glow: rgba(99, 102, 241, 0.45);
+  
+  --accent-emerald: #10b981;
+  --accent-coral: #f43f5e;
+  --accent-amber: #f59e0b;
+  --accent-cyan: #06b6d4;
+  --accent-purple: #a855f7;
+  
+  --brand-render: #46e3b7;
+  --brand-discord: #5865f2;
+  --brand-github: #f0f6fc;
+  --brand-google: #4285f4;
+  --brand-amazon: #ff9900;
+  --brand-eneba: #00e5a3;
+  --brand-mercadolibre: #ffe600;
+  --brand-steam: #66c0f4;
+
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --radius-xl: 20px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 9999px;
+  
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+  --bg-base: #f1f5f9;
+  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16) 0px, transparent 50%),
+             radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.14) 0px, transparent 50%),
+             radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.16) 0px, transparent 50%);
+  --glass-surface: rgba(255, 255, 255, 0.82);
+  --glass-surface-hover: rgba(255, 255, 255, 0.95);
+  --glass-card: rgba(255, 255, 255, 0.88);
+  --glass-subtle: rgba(0, 0, 0, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --glass-border-focus: rgba(99, 102, 241, 0.6);
+  --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 20px 40px -10px rgba(100, 116, 139, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.9);
+  
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-soft: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  background-image: var(--bg-mesh);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(8px);
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
+
+/* Luces de Fondo Dinámicas */
+.ambient-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(130px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  animation: floatOrb 24s infinite ease-in-out alternate;
+}
+.orb-1 { width: 540px; height: 540px; background: #6366f1; top: -140px; left: -120px; }
+.orb-2 { width: 500px; height: 500px; background: #06b6d4; bottom: -120px; right: -100px; animation-duration: 28s; }
+.orb-3 { width: 380px; height: 380px; background: #ec4899; top: 38%; left: 38%; animation-duration: 22s; }
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(45px, -35px) scale(1.06); }
+  100% { transform: translate(-35px, 45px) scale(0.96); }
+}
+
+/* App Shell */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  min-height: 100vh;
+}
