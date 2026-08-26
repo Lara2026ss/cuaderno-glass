@@ -1,60 +1,62 @@
 /**
- * Cuaderno Glass Pro 4.0 — Firebase Configuration Loader
+ * Cuaderno Glass Pro 4.0 — Firebase Public Configuration Loader
  */
 
 import { store } from '../app/state.js';
 import { logger } from '../app/logger.js';
+
+// Configuración pública predeterminada para la app web alero-company-works
+const DEFAULT_PUBLIC_WEB_CONFIG = {
+  projectId: 'alero-company-works',
+  appId: '1:16044531269:web:431da21bd13952050d8d2c',
+  apiKey: 'AIzaSyBt9pqBxcSOWVSm7fSBJtYSmmPgrb8A_rU',
+  authDomain: 'alero-company-works.firebaseapp.com',
+  storageBucket: 'alero-company-works.firebasestorage.app',
+  messagingSenderId: '16044531269'
+};
 
 let cachedConfig = null;
 
 export async function fetchServerFirebaseConfig() {
   if (cachedConfig) return cachedConfig;
 
-  // 1. Primero intentar obtener configuración personalizada guardada por el usuario
+  // 1. Primero verificar si el usuario configuró credenciales personalizadas en Ajustes
   const customConfig = store.get('settings.firebaseConfig', null);
   if (customConfig && isValidFirebaseConfig(customConfig)) {
     cachedConfig = customConfig;
     return cachedConfig;
   }
 
-  // 2. Intentar consultar endpoint público del backend
+  // 2. Intentar consultar endpoint público del backend si está disponible
   try {
     const res = await fetch('/api/firebase/config');
     if (res.ok) {
       const data = await res.json();
-      if (data && data.projectId) {
+      if (data && data.projectId && data.apiKey) {
         cachedConfig = {
           projectId: data.projectId,
           authDomain: data.authDomain,
           storageBucket: data.storageBucket,
           messagingSenderId: data.messagingSenderId,
-          apiKey: data.apiKey || '',
-          appId: data.appId || ''
+          apiKey: data.apiKey,
+          appId: data.appId
         };
         logger.info('FirebaseConfig', 'Configuración de Firebase Web App obtenida de backend:', { projectId: data.projectId });
         return cachedConfig;
       }
     }
   } catch (err) {
-    logger.debug('FirebaseConfig', 'Backend /api/firebase/config no disponible, usando fallback público');
+    logger.debug('FirebaseConfig', 'Backend /api/firebase/config no disponible, usando preset público');
   }
 
-  // 3. Fallback predeterminado público (alero-company-works)
-  cachedConfig = {
-    projectId: 'alero-company-works',
-    authDomain: 'alero-company-works.firebaseapp.com',
-    storageBucket: 'alero-company-works.appspot.com',
-    messagingSenderId: '117099384718',
-    apiKey: '',
-    appId: ''
-  };
-
+  // 3. Fallback a la configuración pública oficial de la Web App
+  cachedConfig = { ...DEFAULT_PUBLIC_WEB_CONFIG };
   return cachedConfig;
 }
 
 export function isValidFirebaseConfig(config) {
   if (!config || typeof config !== 'object') return false;
-  return typeof config.projectId === 'string' && config.projectId.trim().length > 0;
+  return typeof config.projectId === 'string' && config.projectId.trim().length > 0 && typeof config.apiKey === 'string' && config.apiKey.trim().length > 0;
 }
 
 export function initializeFirebaseApp(customConfig = null) {
@@ -63,11 +65,7 @@ export function initializeFirebaseApp(customConfig = null) {
     return null;
   }
 
-  const config = customConfig || cachedConfig || {
-    projectId: 'alero-company-works',
-    authDomain: 'alero-company-works.firebaseapp.com',
-    storageBucket: 'alero-company-works.appspot.com'
-  };
+  const config = customConfig || cachedConfig || DEFAULT_PUBLIC_WEB_CONFIG;
 
   try {
     if (firebase.apps && firebase.apps.length > 0) {

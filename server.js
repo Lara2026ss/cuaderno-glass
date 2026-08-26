@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Backend Server & Secure API Architecture
+ * Cuaderno Glass Pro 4.0 — Backend Server & Secure Dynamic Firebase Auto-Config
  */
 
 const express = require('express');
@@ -9,10 +9,12 @@ const cors = require('cors');
 
 let admin = null;
 let firestoreDb = null;
+let cachedWebConfig = null;
 
 // 1. Inicialización Segura de Firebase Admin SDK (Exclusivo de Backend)
 try {
   admin = require('firebase-admin');
+  const { initializeApp, cert } = require('firebase-admin/app');
   
   const storageDir = path.resolve(__dirname, '..', 'windows-doc', 'storage');
   let serviceAccount = null;
@@ -22,7 +24,6 @@ try {
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH && fs.existsSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH)) {
     serviceAccount = JSON.parse(fs.readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH, 'utf-8'));
   } else if (fs.existsSync(storageDir)) {
-    // Buscar dinámicamente cualquier archivo de credencial en storage sin hardcodear nombres
     const files = fs.readdirSync(storageDir).filter(f => f.endsWith('.json'));
     for (const file of files) {
       try {
@@ -36,9 +37,35 @@ try {
   }
 
   if (serviceAccount) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    initializeApp({ credential: cert(serviceAccount) });
     firestoreDb = admin.firestore();
     console.log('🔥 Firebase Admin SDK inicializado exitosamente en el backend');
+
+    // Auto-descubrimiento en tiempo de ejecución de la configuración de Firebase Web App
+    (async () => {
+      try {
+        const tokenObj = await cert(serviceAccount).getAccessToken();
+        const projectId = serviceAccount.project_id || 'alero-company-works';
+        const listRes = await fetch(`https://firebase.googleapis.com/v1beta1/projects/${projectId}/webApps`, {
+          headers: { 'Authorization': `Bearer ${tokenObj.access_token}` }
+        });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          if (listData.apps && listData.apps.length > 0) {
+            const appId = listData.apps[0].appId;
+            const configRes = await fetch(`https://firebase.googleapis.com/v1beta1/projects/${projectId}/webApps/${appId}/config`, {
+              headers: { 'Authorization': `Bearer ${tokenObj.access_token}` }
+            });
+            if (configRes.ok) {
+              cachedWebConfig = await configRes.json();
+              console.log(`✨ Configuración Web App de Firebase (${projectId}) auto-descubierta y lista`);
+            }
+          }
+        }
+      } catch (discoveryErr) {
+        console.warn('⚠️ No se pudo auto-descubrir Web App config:', discoveryErr.message);
+      }
+    })();
   } else {
     console.warn('⚠️ No se encontró service account de Firebase Admin. Endpoints backend operarán en modo degradado.');
   }
@@ -91,20 +118,32 @@ app.get('/api/health', (req, res) => {
     service: 'cuaderno-glass-pro',
     version: '4.0.0',
     firebaseAdmin: !!firestoreDb,
+    firebaseWebConfigLoaded: !!cachedWebConfig,
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
 });
 
-// 2. Firebase Public Web Config (FASE 3 — Cero Secretos)
+// 2. Firebase Public Web Config (FASE 3 — Auto-Descubrimiento Dinámico & Cero Secretos)
 app.get('/api/firebase/config', (req, res) => {
+  if (cachedWebConfig) {
+    return res.json({
+      projectId: cachedWebConfig.projectId,
+      authDomain: cachedWebConfig.authDomain,
+      storageBucket: cachedWebConfig.storageBucket,
+      messagingSenderId: cachedWebConfig.messagingSenderId,
+      apiKey: cachedWebConfig.apiKey,
+      appId: cachedWebConfig.appId
+    });
+  }
+
   res.json({
     projectId: process.env.FIREBASE_PROJECT_ID || 'alero-company-works',
     authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'alero-company-works.firebaseapp.com',
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'alero-company-works.appspot.com',
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '117099384718',
-    apiKey: process.env.FIREBASE_API_KEY || '',
-    appId: process.env.FIREBASE_APP_ID || ''
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'alero-company-works.firebasestorage.app',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '16044531269',
+    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyBt9pqBxcSOWVSm7fSBJtYSmmPgrb8A_rU',
+    appId: process.env.FIREBASE_APP_ID || '1:16044531269:web:431da21bd13952050d8d2c'
   });
 });
 
