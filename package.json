@@ -1,10 +1,12 @@
 {
   "name": "cuaderno-glass",
-  "version": "2.0.0",
-  "description": "Suite Personal & Cloud Hub con estética Ultra-Glassmorphism, Firebase, Google Drive y Gemini AI",
+  "version": "4.0.0",
+  "description": "Suite Web Modular & Cloud Hub con Ultra-Glassmorphism, Firebase Auth/Firestore real, Gemini AI, Price Tracker multitienda (Amazon, Eneba, Mercado Libre, Steam) y Web Audio API",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "node build.js",
+    "test": "node tests/run-all.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -12,5 +14,18 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": [
+    "glassmorphism",
+    "firebase",
+    "google-auth",
+    "firestore",
+    "gemini-ai",
+    "price-tracker",
+    "web-audio-api",
+    "discord-webhook",
+    "render"
+  ],
+  "author": "Lara2026ss",
+  "license": "MIT"
 }
