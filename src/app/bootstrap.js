@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Inicializador Maestro & Error Boundary 4.5
+ * Cuaderno Glass Pro 4.0 — Inicializador Maestro, Diagnóstico Visual & Error Boundary 4.5
  */
 
 import { store } from './state.js';
@@ -45,9 +45,13 @@ export class AppBootstrap {
     pomodoroFeature.init();
     searchFeature.init();
 
-    // Inicializar Sincronizador & Auth
-    synchronizer.init();
-    await authService.init();
+    // Inicializar Sincronizador & Auth de forma segura
+    try {
+      synchronizer.init();
+      await authService.init();
+    } catch (authInitErr) {
+      logger.warn('Bootstrap', 'Firebase Auth no inicializado en bootstrap, arrancando en Modo Local seguro', { error: authInitErr.message });
+    }
 
     // Inicializar Router
     router.init();
@@ -133,14 +137,18 @@ export class AppBootstrap {
   }
 
   _setupIntegrations() {
-    // Registrar todas las integraciones en el registry (FASE 18)
+    // Registrar todas las integraciones en el registry
     registry.register({
       id: 'firebase',
       name: 'Firebase Firestore & Auth',
       icon: '🔥',
       description: 'Base de datos en la nube y autenticación de usuarios',
       capabilities: ['auth', 'database'],
-      healthCheck: async () => ({ ok: store.get('connections.firebase.status') === 'connected' })
+      healthCheck: async () => {
+        const isAuth = store.get('session.isAuthenticated', false);
+        const hasSdk = store.get('connections.firebase.sdkInitialized', false);
+        return { ok: isAuth || hasSdk, status: isAuth ? 'connected' : (hasSdk ? 'connecting' : 'disconnected') };
+      }
     });
 
     registry.register({
@@ -201,7 +209,6 @@ export class AppBootstrap {
       });
     }
 
-    // Renderizar tarjetas de integraciones
     this._renderConnectorsView();
   }
 
@@ -215,13 +222,42 @@ export class AppBootstrap {
       const card = document.createElement('div');
       card.className = 'glass-card';
 
-      const statusMap = {
-        connected: { text: 'Conectado', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.18)' },
-        disconnected: { text: 'Desconectado', color: 'var(--text-soft)', bg: 'rgba(255,255,255,0.06)' },
-        connecting: { text: 'Conectando...', color: 'var(--primary-light)', bg: 'rgba(99,102,241,0.18)' },
-        error: { text: 'Error', color: 'var(--accent-coral)', bg: 'rgba(244,63,94,0.18)' }
-      };
-      const st = statusMap[item.status] || statusMap.disconnected;
+      let statusBadge = '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">Desconectado</span>';
+      if (item.id === 'firebase') {
+        const isAuth = store.get('session.isAuthenticated');
+        const lastErr = store.get('connections.firebase.lastAuthError');
+        if (isAuth) {
+          statusBadge = '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">● Autenticado</span>';
+        } else if (lastErr) {
+          statusBadge = '<span class="badge-tag" style="background:rgba(244,63,94,0.22); color:var(--accent-coral);">✕ Requiere Configuración</span>';
+        } else {
+          statusBadge = '<span class="badge-tag" style="background:rgba(99,102,241,0.22); color:var(--primary-light);">● Modo Local / Demo</span>';
+        }
+      } else {
+        const statusMap = {
+          connected: { text: 'Conectado', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.18)' },
+          disconnected: { text: 'Desconectado', color: 'var(--text-soft)', bg: 'rgba(255,255,255,0.06)' },
+          connecting: { text: 'Conectando...', color: 'var(--primary-light)', bg: 'rgba(99,102,241,0.18)' },
+          error: { text: 'Error', color: 'var(--accent-coral)', bg: 'rgba(244,63,94,0.18)' }
+        };
+        const st = statusMap[item.status] || statusMap.disconnected;
+        statusBadge = `<span class="badge-tag" style="background:${st.bg}; color:${st.color};">${st.text}</span>`;
+      }
+
+      let extraDiagnosticHtml = '';
+      if (item.id === 'firebase') {
+        const projectId = store.get('settings.firebaseConfig.projectId', 'alero-company-works');
+        const lastErr = store.get('connections.firebase.lastAuthError');
+        extraDiagnosticHtml = `
+          <div style="background:rgba(0,0,0,0.25); border-radius:var(--radius-sm); padding:8px 10px; margin:8px 0; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); display:flex; flex-direction:column; gap:3px;">
+            <div><strong>Project ID:</strong> ${projectId}</div>
+            <div><strong>Auth Domain:</strong> ${projectId}.firebaseapp.com</div>
+            <div><strong>App ID:</strong> 1:16044531269:web:431da21bd13952050d8d2c</div>
+            <div><strong>API Key:</strong> AIzaSyBt9••••••••••••••••</div>
+            ${lastErr ? `<div style="color:var(--accent-coral); margin-top:2px;"><strong>Último error:</strong> [${lastErr.code}] ${lastErr.message}</div>` : ''}
+          </div>
+        `;
+      }
 
       card.innerHTML = `
         <div class="card-head">
@@ -229,12 +265,14 @@ export class AppBootstrap {
             <span style="font-size: 1.25rem;">${item.icon}</span>
             <span>${item.name}</span>
           </div>
-          <span class="badge-tag" style="background:${st.bg}; color:${st.color};">${st.text}</span>
+          ${statusBadge}
         </div>
-        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">${item.description}</p>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;">${item.description}</p>
+        ${extraDiagnosticHtml}
         <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:10px; flex-wrap:wrap; gap:6px;">
           <span style="font-size:0.7rem; color:var(--text-soft);">ID: ${item.id}</span>
           <div style="display:flex; gap:6px;">
+            ${item.id === 'firebase' ? `<a href="https://console.firebase.google.com/project/alero-company-works/authentication" target="_blank" rel="noopener noreferrer" class="btn btn-glass btn-sm">Consola ↗</a>` : ''}
             <button class="btn btn-glass btn-sm btn-test-conn">Probar</button>
             <button class="btn btn-primary btn-sm btn-config-conn">Configurar</button>
           </div>
@@ -245,7 +283,7 @@ export class AppBootstrap {
         toast.info(`Probando conexión con ${item.name}...`);
         const res = await registry.testConnection(item.id);
         if (res.ok) toast.success(`Conexión con ${item.name} exitosa`);
-        else toast.error(`Error en ${item.name}: ${res.error}`);
+        else toast.error(`Error en ${item.name}: ${res.error || 'Verifica la configuración'}`);
         this._renderConnectorsView();
       });
 
@@ -265,7 +303,16 @@ export class AppBootstrap {
     const userAvatarEl = document.getElementById('user-avatar-img');
 
     const updateProfileUI = () => {
+      const isChecking = store.get('session.isChecking', false);
       const user = store.get('user');
+
+      if (isChecking) {
+        if (userNameEl) userNameEl.textContent = 'Comprobando sesión...';
+        if (userEmailEl) userEmailEl.textContent = 'Firebase';
+        if (authText) authText.textContent = 'Verificando...';
+        return;
+      }
+
       if (user) {
         if (userNameEl) userNameEl.textContent = user.displayName || 'Usuario Google';
         if (userEmailEl) userEmailEl.textContent = user.email || 'Conectado';
@@ -278,8 +325,8 @@ export class AppBootstrap {
         }
         if (authText) authText.textContent = 'Cerrar Sesión';
       } else {
-        if (userNameEl) userNameEl.textContent = 'Invitado';
-        if (userEmailEl) userEmailEl.textContent = 'Modo Local';
+        if (userNameEl) userNameEl.textContent = 'Modo Local / Demo';
+        if (userEmailEl) userEmailEl.textContent = 'Sin conexión cloud';
         if (userAvatarEl) userAvatarEl.textContent = '👤';
         if (authText) authText.textContent = 'Iniciar Sesión con Google';
       }
@@ -288,11 +335,13 @@ export class AppBootstrap {
     updateProfileUI();
     events.on('auth:user-signed-in', () => {
       updateProfileUI();
+      this._renderConnectorsView();
       toast.success('¡Bienvenido! Sesión iniciada con Google');
     });
 
     events.on('auth:user-signed-out', () => {
       updateProfileUI();
+      this._renderConnectorsView();
       toast.info('Sesión cerrada');
     });
 
@@ -300,14 +349,35 @@ export class AppBootstrap {
       authBtn.addEventListener('click', async () => {
         audio.soundClick();
         const user = store.get('user');
+
         if (user) {
-          await authService.signOut();
-        } else {
           try {
-            toast.info('Abriendo inicio de sesión con Google...');
-            await authService.signInWithGoogle();
+            await authService.signOut();
           } catch (e) {
-            toast.error(e.message || 'Error al iniciar sesión');
+            toast.error('Error al cerrar sesión');
+          }
+        } else {
+          // UX de Login: Estados visuales reactivos (FASE 19)
+          try {
+            authBtn.disabled = true;
+            if (authText) authText.textContent = 'Abriendo Google...';
+            toast.info('Abriendo inicio de sesión con Google...');
+
+            await authService.signInWithGoogle();
+          } catch (mappedError) {
+            logger.warn('AuthUI', 'Error capturado en login UI', mappedError);
+            toast.error(mappedError.friendlyMessage || mappedError.message || 'Error al iniciar sesión');
+            
+            if (mappedError.isConfigError && mappedError.actionUrl) {
+              setTimeout(() => {
+                toast.warning(`👉 Configura Google en Firebase Console: ${mappedError.actionText}`);
+              }, 1200);
+            }
+          } finally {
+            // Asegurar que el botón siempre vuelva a estar disponible
+            authBtn.disabled = false;
+            updateProfileUI();
+            this._renderConnectorsView();
           }
         }
       });
@@ -319,26 +389,22 @@ export class AppBootstrap {
   }
 
   _setupModals() {
-    // Cerrar modales con botones de clase .btn-close-modal
     document.querySelectorAll('.btn-close-modal').forEach(btn => {
       btn.addEventListener('click', () => modals.close());
     });
 
-    // Cerrar al hacer clic en el fondo del modal
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
       backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) modals.close();
       });
     });
 
-    // Cerrar con tecla Escape (FASE 17)
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         modals.close();
       }
     });
 
-    // Botones de configuración
     const btnOpenSettings = document.getElementById('btn-open-settings');
     if (btnOpenSettings) {
       btnOpenSettings.addEventListener('click', () => modals.openSettings());
