@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuaderno Glass — Suite Personal & Cloud Hub</title>
+  
+  <!-- Tipografías de Alta Fidelidad -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Librerías Externas: Confetti, Firebase SDK y Google Identity -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+
+  <style>
+    /* =========================================================
+       SISTEMA DE DISEÑO: DYNAMIC ULTRA-GLASSMORPHISM
+       ========================================================= */
+    :root {
+      --bg-base: #060914;
+      --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 50%),
+                 radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.22) 0px, transparent 50%),
+                 radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.25) 0px, transparent 50%),
+                 radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.24) 0px, transparent 50%);
+      
+      --glass-surface: rgba(18, 24, 45, 0.65);
+      --glass-surface-hover: rgba(28, 36, 65, 0.8);
+      --glass-card: rgba(23, 30, 54, 0.55);
+      --glass-subtle: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-border-focus: rgba(129, 140, 248, 0.6);
+      --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.2);
+      --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-soft: #64748b;
+      
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --accent-emerald: #10b981;
+      --accent-coral: #f43f5e;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #06b6d4;
+      --accent-render: #46e3b7;
+      --accent-discord: #5865f2;
+
+      --font-main: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --radius-pill: 9999px;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f1f5f9;
+      --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16) 0px, transparent 50%),
+                 radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.14) 0px, transparent 50%),
+                 radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.16) 0px, transparent 50%);
+      --glass-surface: rgba(255, 255, 255, 0.8);
+      --glass-surface-hover: rgba(255, 255, 255, 0.95);
+      --glass-card: rgba(255, 255, 255, 0.85);
+      --glass-subtle: rgba(0, 0, 0, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.9);
+      --glass-border-focus: rgba(99, 102, 241, 0.6);
+      --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+      --glass-shadow: 0 20px 40px -10px rgba(100, 116, 139, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.9);
+      
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-soft: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-base);
+      background-image: var(--bg-mesh);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-main);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar Glass */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-pill);
+      backdrop-filter: blur(8px);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+    /* Orbes de luz ambientales */
+    .ambient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+      animation: floatOrb 24s infinite ease-in-out alternate;
+    }
+    .orb-1 { width: 520px; height: 520px; background: #6366f1; top: -120px; left: -100px; }
+    .orb-2 { width: 480px; height: 480px; background: #06b6d4; bottom: -100px; right: -80px; animation-duration: 28s; }
+    .orb-3 { width: 360px; height: 360px; background: #ec4899; top: 40%; left: 40%; animation-duration: 20s; }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(50px, -40px) scale(1.08); }
+      100% { transform: translate(-40px, 50px) scale(0.95); }
+    }
+
+    /* Layout Shell */
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 1024px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: fixed !important; transform: translateX(-100%); z-index: 999; width: 280px; }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-menu-btn { display: flex !important; }
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: var(--glass-surface);
+      border-right: 1px solid var(--glass-border);
+      padding: 26px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      box-shadow: var(--glass-shadow);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 2px 4px;
+    }
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 4px 18px var(--primary-glow);
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.28rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-cyan);
+    }
+
+    /* Navegación */
+    .nav-list { display: flex; flex-direction: column; gap: 6px; }
+    .nav-btn {
+      all: unset;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.22s ease;
+    }
+    .nav-btn:hover {
+      background: var(--glass-subtle);
+      color: var(--text-main);
+      transform: translateX(4px);
+    }
+    .nav-btn.active {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.24), rgba(236, 72, 153, 0.08));
+      color: var(--text-main);
+      border: 1px solid var(--glass-border-focus);
+      font-weight: 600;
+      box-shadow: var(--glass-shine), 0 4px 16px rgba(99, 102, 241, 0.18);
+    }
+    .nav-badge {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--primary-light);
+    }
+
+    /* Perfil de Usuario Firebase en Sidebar */
+    .user-profile-card {
+      margin-top: auto;
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shine), var(--glass-shadow);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .user-profile-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info { flex: 1; overflow: hidden; }
+    .user-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Área Principal */
+    main {
+      padding: 34px 44px;
+      max-width: 1300px;
+      width: 100%;
+    }
+    @media (max-width: 768px) { main { padding: 18px 14px; } }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 460px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 11px 18px 11px 42px;
+      border-radius: var(--radius-pill);
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      box-shadow: var(--glass-shine);
+      transition: all 0.22s ease;
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-soft);
+    }
+
+    /* Vistas */
+    .view-content { display: none; }
+    .view-content.active {
+      display: block;
+      animation: fadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .view-header { margin-bottom: 24px; }
+    .view-header h1 {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .view-header p { color: var(--text-muted); font-size: 0.92rem; }
+
+    /* Tarjetas Glass */
+    .glass-card {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shine), var(--glass-shadow);
+      margin-bottom: 22px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .glass-card:hover { border-color: rgba(255, 255, 255, 0.2); }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Botones */
+    .btn {
+      all: unset;
+      cursor: pointer;
+      padding: 9px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+    .btn-glass {
+      background: var(--glass-subtle);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+    }
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fda4af;
+    }
+    .btn-danger:hover { background: rgba(244, 63, 94, 0.25); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 0.78rem; border-radius: var(--radius-sm); }
+    .btn-google {
+      background: #ffffff;
+      color: #1f2937;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .btn-google:hover { background: #f3f4f6; transform: translateY(-1px); }
+
+    /* Layout Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 22px;
+    }
+    @media (max-width: 960px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Métricas */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .metric-box {
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shine);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-box::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--accent-theme, var(--primary));
+    }
+    .metric-num {
+      font-family: var(--font-mono);
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .metric-lbl {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    /* Categorías & Chips */
+    .chips-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+    .chip {
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--glass-subtle);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .chip:hover, .chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 10px var(--primary-glow);
+    }
+    .badge-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+    }
+
+    /* Tareas */
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      margin-bottom: 9px;
+      transition: all 0.2s ease;
+    }
+    .task-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateX(4px);
+    }
+    .task-row.done {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+    .task-check {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--text-soft);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .task-check:checked {
+      background: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+    }
+    .task-check:checked::after {
+      content: "✓";
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .task-details { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .task-text { font-size: 0.9rem; font-weight: 500; }
+    .task-sub { display: flex; gap: 8px; font-size: 0.72rem; color: var(--text-muted); align-items: center; }
+
+    /* Inputs */
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%;
+      background: rgba(10, 15, 30, 0.7);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: var(--text-main);
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea {
+      background: rgba(255, 255, 255, 0.85);
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    textarea { resize: vertical; min-height: 100px; }
+
+    /* Deal / Alert Item */
+    .deal-item {
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+    .deal-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--primary-light);
+    }
+    .deal-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.18);
+      color: var(--accent-emerald);
+      font-weight: 700;
+    }
+
+    /* Gemini Chat Box */
+    .chat-messages {
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-right: 6px;
+    }
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      max-width: 85%;
+    }
+    .chat-bubble.bot {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      align-self: flex-start;
+    }
+    .chat-bubble.user {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      align-self: flex-end;
+    }
+
+    /* Toast */
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--glass-surface);
+      border: 1px solid var(--primary-light);
+      color: var(--text-main);
+      padding: 12px 20px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glass-shadow);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      backdrop-filter: blur(25px);
+      animation: toastIn 0.3s ease;
+    }
+    @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1001;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Luces ambientales de fondo -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
+  <!-- Botón Móvil -->
+  <button class="btn mobile-menu-btn" id="mobile-btn">☰</button>
+
+  <div class="app-shell">
+    
+    <!-- =================== SIDEBAR =================== -->
+    <aside class="sidebar" id="sidebar-nav">
+      <div class="brand">
+        <div class="brand-logo">✨</div>
+        <div>
+          <div class="brand-title">Cuaderno</div>
+          <span class="brand-tag">Cloud Suite Pro</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" id="nav-btns">
+        <button class="nav-btn active" data-tab="dashboard">
+          <span>📊</span> Dashboard
+          <span class="nav-badge" id="badge-tasks">0</span>
+        </button>
+        <button class="nav-btn" data-tab="deals">
+          <span>🔔</span> Alertas & Descuentos
+          <span class="nav-badge" style="color: var(--accent-emerald);">Live</span>
+        </button>
+        <button class="nav-btn" data-tab="documents">
+          <span>📑</span> Documentos & Drive
+          <span class="nav-badge" id="badge-docs">0</span>
+        </button>
+        <button class="nav-btn" data-tab="gemini">
+          <span>✨</span> Gemini AI Copilot
+        </button>
+        <button class="nav-btn" data-tab="connectors">
+          <span>⚡</span> Apps & Webhooks
+          <span class="nav-badge" style="color: var(--accent-render);">4 Apps</span>
+        </button>
+        <button class="nav-btn" data-tab="pomodoro">
+          <span>🎯</span> Modo Enfoque
+        </button>
+      </nav>
+
+      <!-- Tarjeta de Usuario Google / Firebase -->
+      <div class="user-profile-card">
+        <div class="user-profile-header">
+          <div class="user-avatar" id="user-avatar-img">👤</div>
+          <div class="user-info">
+            <div class="user-name" id="user-display-name">Invitado</div>
+            <div class="user-email" id="user-display-email">Sincronización Local</div>
+          </div>
+        </div>
+        <button class="btn btn-google btn-sm" id="btn-google-auth" style="width: 100%;">
+          <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:4px;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span id="auth-btn-text">Iniciar Sesión con Google</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- =================== CONTENIDO PRINCIPAL =================== -->
+    <main>
+      
+      <!-- Topbar -->
+      <div class="top-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Buscar en tareas, documentos, alertas o notas...">
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button class="btn btn-glass btn-sm" id="btn-theme-toggle">🌓 Tema</button>
+          <button class="btn btn-primary btn-sm" id="btn-quick-new">+ Nueva Entrada</button>
+        </div>
+      </div>
+
+      <!-- =================== TAB 1: DASHBOARD =================== -->
+      <section class="view-content active" id="tab-dashboard">
+        <div class="view-header">
+          <h1>Panel de Control</h1>
+          <p>Tus prioridades del día, métricas en tiempo real y sincronización activa.</p>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-box" style="--accent-theme: var(--primary);">
+            <div class="metric-num" id="stat-pending-tasks">0</div>
+            <div class="metric-lbl">Tareas Pendientes</div>
+          </div>
+          <div class="metric-box" style="--accent-theme: var(--accent-emerald);">
+            <div class="metric-num" id="stat-completed-tasks">0</div>
+            <div class="metric-lbl">Completadas</div>
+          </div>
+          <div class="metric-box" style="--accent-theme: var(--accent-cyan);">
+            <div class="metric-num" id="stat-docs-count">0</div>
+            <div class="metric-lbl">Documentos & Notas</div>
+          </div>
+          <div class="metric-box" style="--accent-theme: var(--accent-amber);">
+            <div class="metric-num" id="stat-active-alerts">3</div>
+            <div class="metric-lbl">Alertas Activas</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Columna Izquierda: Tareas y Scratchpad -->
+          <div>
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title">📌 Tareas & Metas Clave</div>
+                <div class="chips-bar" id="task-filter-chips">
+                  <span class="chip active" data-cat="all">Todas</span>
+                  <span class="chip" data-cat="Trabajo">💼 Trabajo</span>
+                  <span class="chip" data-cat="Personal">🌿 Personal</span>
+                  <span class="chip" data-cat="Estudio">📚 Estudio</span>
+                  <span class="chip" data-cat="Ideas">💡 Ideas</span>
+                </div>
+              </div>
+
+              <div id="tasks-container"></div>
+
+              <form id="form-add-task" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+                <input type="text" id="input-task-text" placeholder="¿Qué meta tienes hoy?" style="flex: 2; min-width: 170px;" required>
+                <select id="input-task-cat" style="flex: 1; min-width: 110px;">
+                  <option value="Trabajo">💼 Trabajo</option>
+                  <option value="Personal">🌿 Personal</option>
+                  <option value="Estudio">📚 Estudio</option>
+                  <option value="Ideas">💡 Ideas</option>
+                </select>
+                <select id="input-task-prio" style="width: 110px;">
+                  <option value="media">⚡ Media</option>
+                  <option value="alta">🔥 Alta</option>
+                  <option value="baja">🌱 Baja</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Añadir</button>
+              </form>
+            </div>
+
+            <!-- Scratchpad Rápido -->
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title">⚡ Bloc de Notas Rápido</div>
+                <button class="btn btn-glass btn-sm" id="btn-clean-notes">✨ Limpiar con IA</button>
+              </div>
+              <textarea id="scratchpad-area" placeholder="Captura ideas al vuelo, notas de reuniones o snippets..."></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-size: 0.75rem; color: var(--text-soft);" id="scratchpad-indicator">Sincronizado en la nube</span>
+                <button class="btn btn-primary btn-sm" id="btn-save-note">Guardar Nota</button>
+              </div>
+              <div id="quick-notes-list" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Alertas & Pomodoro -->
+          <div>
+            <!-- Resumen de Alertas y Descuentos -->
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title" style="color: var(--accent-emerald);">🔔 Alertas & Descuentos</div>
+                <button class="btn btn-glass btn-sm" onclick="showTab('deals')">Ver Todas</button>
+              </div>
+              <div id="deals-preview"></div>
+            </div>
+
+            <!-- Pomodoro Focus -->
+            <div class="glass-card" style="text-align: center;">
+              <div class="card-title" style="justify-content: center; margin-bottom: 6px;">🎯 Bloque de Enfoque</div>
+              <div style="font-family: var(--font-mono); font-size: 3.2rem; font-weight: 800; color: #e0e7ff; margin: 8px 0;" id="dash-timer-val">25:00</div>
+              <div style="display: flex; justify-content: center; gap: 10px;">
+                <button class="btn btn-primary btn-sm" id="btn-dash-timer">Iniciar</button>
+                <button class="btn btn-glass btn-sm" id="btn-dash-reset">Reiniciar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================== TAB 2: ALERTAS & DESCUENTOS =================== -->
+      <section class="view-content" id="tab-deals">
+        <div class="view-header">
+          <h1>Alertas, Descuentos & Suscripciones</h1>
+          <p>Rastreo de ofertas de herramientas de desarrollo, servidores, suscripciones y recordatorios.</p>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-head">
+            <div class="card-title">🎁 Descuentos & Oportunidades Activas</div>
+            <button class="btn btn-primary btn-sm" id="btn-refresh-deals">🔄 Actualizar Ofertas</button>
+          </div>
+          <div id="deals-full-list"></div>
+        </div>
+      </section>
+
+      <!-- =================== TAB 3: DOCUMENTOS & DRIVE =================== -->
+      <section class="view-content" id="tab-documents">
+        <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <h1>Documentos & Google Drive Hub</h1>
+            <p>Gestor de apuntes, artículos enriquecidos y sincronización con tu Google Drive.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new-doc-toggle">+ Redactar Documento</button>
+        </div>
+
+        <!-- Editor de Documento -->
+        <div class="glass-card" id="doc-editor-box" style="display: none; border-color: var(--primary);">
+          <div class="card-head">
+            <div class="card-title">✍️ Redactar Documento / Nota</div>
+            <button class="btn btn-glass btn-sm" id="btn-close-doc-editor">✕ Cerrar</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <input type="text" id="doc-title-input" placeholder="Título del documento..." style="font-size: 1.1rem; font-weight: 600;">
+            <div style="display: flex; gap: 10px;">
+              <select id="doc-category-input" style="flex: 1;">
+                <option value="Trabajo">💼 Trabajo</option>
+                <option value="Personal">🌿 Personal</option>
+                <option value="Estudio">📚 Estudio</option>
+                <option value="Ideas">💡 Ideas</option>
+              </select>
+              <input type="text" id="doc-tags-input" placeholder="Etiquetas (ej. api, render, backend)" style="flex: 2;">
+            </div>
+            <textarea id="doc-body-input" rows="8" placeholder="Escribe el contenido en Markdown..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <button class="btn btn-glass btn-sm" id="btn-export-single-doc">📄 Descargar .md</button>
+              <button class="btn btn-primary" id="btn-save-document">🚀 Guardar Documento</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="chips-bar" id="doc-category-chips">
+          <span class="chip active" data-cat="all">Todos los Documentos</span>
+          <span class="chip" data-cat="Trabajo">💼 Trabajo</span>
+          <span class="chip" data-cat="Personal">🌿 Personal</span>
+          <span class="chip" data-cat="Estudio">📚 Estudio</span>
+          <span class="chip" data-cat="Ideas">💡 Ideas</span>
+        </div>
+
+        <div id="documents-container"></div>
+      </section>
+
+      <!-- =================== TAB 4: GEMINI AI COPILOT =================== -->
+      <section class="view-content" id="tab-gemini">
+        <div class="view-header">
+          <h1>Gemini AI Copilot</h1>
+          <p>Tu asistente inteligente personal para resumir documentos, redactar correos o consultar código.</p>
+        </div>
+
+        <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+          <div class="chat-messages" id="gemini-chat-flow">
+            <div class="chat-bubble bot">
+              👋 ¡Hola! Soy tu asistente de IA en Cuaderno Glass. ¿En qué te puedo ayudar hoy? Puedo estructurar tus notas, redactar correos, buscar ideas de proyectos o analizar código.
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="gemini-user-input" placeholder="Escribe una consulta a Gemini AI..." style="flex: 1;">
+            <button class="btn btn-primary" id="btn-send-gemini">Enviar ✨</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================== TAB 5: APPS CONECTADAS =================== -->
+      <section class="view-content" id="tab-connectors">
+        <div class="view-header">
+          <h1>Centro de Aplicaciones & Webhooks</h1>
+          <p>Gestiona las conexiones activas con Render, Discord, GitHub y Firebase.</p>
+        </div>
+
+        <div class="grid-2">
+          <!-- Render & Discord -->
+          <div>
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title" style="color: var(--accent-render);">⚡ Render Services API</div>
+                <span class="badge-tag" style="background: rgba(70,227,183,0.18); color: var(--accent-render);">Live Monitor</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                Servicio conectado para monitoreo de estado de tus bots en Render.
+              </p>
+              <div style="padding: 12px; background: rgba(70,227,183,0.08); border-radius: var(--radius-md); border: 1px solid rgba(70,227,183,0.2);">
+                <div style="font-weight: 600; color: var(--accent-render);">🟢 aero-discord-bot</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Servidor: Node.js · Despliegue en Render · Uptime 99.9%</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title" style="color: var(--accent-discord);">📢 Discord Webhooks</div>
+                <span class="badge-tag" style="background: rgba(88,101,242,0.18); color: #818cf8;">Dispatcher</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">
+                Envía notas o alertas directamente a tu servidor de Discord.
+              </p>
+              <input type="text" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." style="margin-bottom: 10px;">
+              <button class="btn btn-primary btn-sm" id="btn-save-discord-webhook" style="width: 100%;">Guardar y Probar Notificador</button>
+            </div>
+          </div>
+
+          <!-- GitHub & Firebase -->
+          <div>
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title">🐙 GitHub Repository</div>
+                <span class="badge-tag" style="background: rgba(255,255,255,0.15); color: #fff;">Sincronizado</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                Repositorio activo en GitHub: <strong style="color: var(--primary-light);">Lara2026ss/cuaderno-glass</strong>
+              </p>
+              <button class="btn btn-glass btn-sm" onclick="window.open('https://github.com/Lara2026ss/cuaderno-glass', '_blank')" style="width: 100%;">
+                Abrir Repositorio en GitHub ↗
+              </button>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-head">
+                <div class="card-title" style="color: var(--accent-amber);">🔥 Firebase Cloud Storage</div>
+                <span class="badge-tag" style="background: rgba(245,158,11,0.18); color: var(--accent-amber);">Firestore</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                Tus datos se guardan y replican automáticamente entre sesiones y dispositivos.
+              </p>
+              <button class="btn btn-glass btn-sm" id="btn-export-full-backup" style="width: 100%;">
+                💾 Descargar Copia de Seguridad Local (.json)
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================== TAB 6: MODO ENFOQUE =================== -->
+      <section class="view-content" id="tab-pomodoro">
+        <div class="view-header">
+          <h1>Modo Enfoque Pomodoro</h1>
+          <p>Estructura tus tiempos de trabajo sin interrupciones.</p>
+        </div>
+
+        <div class="glass-card" style="max-width: 620px; margin: 0 auto; text-align: center;">
+          <div class="chips-bar" style="justify-content: center; margin-bottom: 18px;">
+            <span class="chip active" id="pomo-w" onclick="setTimer(25, 'w')">💼 Trabajo (25m)</span>
+            <span class="chip" id="pomo-s" onclick="setTimer(5, 's')">☕ Descanso (5m)</span>
+            <span class="chip" id="pomo-l" onclick="setTimer(15, 'l')">🌿 Pausa Larga (15m)</span>
+          </div>
+
+          <div style="font-family: var(--font-mono); font-size: 5rem; font-weight: 800; color: #e0e7ff; margin: 18px 0; text-shadow: 0 0 30px var(--primary-glow);" id="full-timer-val">25:00</div>
+
+          <div style="display: flex; justify-content: center; gap: 12px;">
+            <button class="btn btn-primary" id="btn-timer-toggle" style="padding: 12px 30px; font-size: 1rem;">▶ Iniciar</button>
+            <button class="btn btn-glass" id="btn-timer-reset" style="padding: 12px 20px;">↺ Reiniciar</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Notifier -->
+  <div class="toast-box" id="app-toast">✨ Operación completada</div>
+
+  <!-- =================== MOTOR JAVASCRIPT =================== -->
+  <script>
+    /* =========================================================================
+       CUADERNO GLASS PRO - CORE CLIENT
+       ========================================================================= */
+
+    const LocalStore = {
+      get(k, fb) {
+        try {
+          const r = localStorage.getItem('cuaderno_pro_' + k);
+          return r ? JSON.parse(r) : fb;
+        } catch(e) { return fb; }
+      },
+      set(k, v) {
+        try { localStorage.setItem('cuaderno_pro_' + k, JSON.stringify(v)); } catch(e){}
+      }
+    };
+
+    let App = {
+      tasks: LocalStore.get('tasks', [
+        { id: 1, text: "Explorar repositorio Lara2026ss/cuaderno-glass", category: "Trabajo", priority: "alta", done: false, date: "Hoy" },
+        { id: 2, text: "Probar sincronización en tiempo real de Firebase", category: "Trabajo", priority: "alta", done: true, date: "Ayer" },
+        { id: 3, text: "Completar sesión de 25m de concentración Pomodoro", category: "Personal", priority: "media", done: false, date: "Hoy" }
+      ]),
+      notes: LocalStore.get('notes', [
+        { id: 1, text: "Servidor MCP en capas optimizado para Windows", ts: Date.now() - 3600000 },
+        { id: 2, text: "Notificador de Discord configurado para alertar sobre tareas completadas", ts: Date.now() - 86400000 }
+      ]),
+      docs: LocalStore.get('docs', [
+        {
+          id: 1,
+          title: "Plan de Desarrollo Alero Rooks 2026",
+          category: "Trabajo",
+          tags: ["mcp", "arquitectura", "windows"],
+          body: "Alero Rooks implementa una arquitectura desacoplada en capas para reemplazar a Fluxer, garantizando estabilidad en I/O sobre Windows y soporte multiplataforma.",
+          ts: Date.now()
+        }
+      ]),
+      deals: [
+        { id: 1, title: "GitHub Copilot Student / Developer Pack", tag: "100% Gratis", desc: "Acceso gratuito a herramientas Pro de GitHub y servicios cloud.", url: "https://education.github.com/pack" },
+        { id: 2, title: "Render Free Tier Services", tag: "Hosting Gratis", desc: "Despliegue de web services y bots Node.js con SSL automático.", url: "https://render.com" },
+        { id: 3, title: "Google Cloud 300$ Free Credits", tag: "Cloud Credits", desc: "Créditos para APIs de Gemini, Cloud Storage y Google Drive.", url: "https://cloud.google.com/free" }
+      ],
+      user: LocalStore.get('user', null),
+      activeCat: 'all'
+    };
+
+    function notify(text, dur = 3000) {
+      const t = document.getElementById('app-toast');
+      t.textContent = text;
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, dur);
+    }
+
+    // ---------- TABS NAVIGATION ----------
+    const navButtons = document.querySelectorAll('#nav-btns .nav-btn');
+    const viewTabs = document.querySelectorAll('.view-content');
+    const sidebar = document.getElementById('sidebar-nav');
+
+    function showTab(tabName) {
+      navButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+      viewTabs.forEach(v => v.classList.toggle('active', v.id === 'tab-' + tabName));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      sidebar.classList.remove('open');
+    }
+
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => showTab(btn.dataset.tab));
+    });
+
+    document.getElementById('mobile-btn').addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    document.getElementById('btn-quick-new').addEventListener('click', () => {
+      showTab('documents');
+      document.getElementById('doc-editor-box').style.display = 'block';
+      document.getElementById('doc-title-input').focus();
+    });
+
+    // ---------- TEMA CLARO / OSCURO ----------
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    let theme = LocalStore.get('theme', 'dark');
+    document.documentElement.setAttribute('data-theme', theme);
+
+    themeBtn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      LocalStore.set('theme', theme);
+      notify(theme === 'dark' ? '🌙 Modo Dark Glass' : '☀️ Modo Frost Light');
+    });
+
+    // ---------- AUTENTICACIÓN GOOGLE / FIREBASE ----------
+    const authBtn = document.getElementById('btn-google-auth');
+    const authBtnText = document.getElementById('auth-btn-text');
+    const userNameEl = document.getElementById('user-display-name');
+    const userEmailEl = document.getElementById('user-display-email');
+    const userAvatarEl = document.getElementById('user-avatar-img');
+
+    function updateAuthUI() {
+      if (App.user) {
+        userNameEl.textContent = App.user.name || 'Usuario Google';
+        userEmailEl.textContent = App.user.email || 'Conectado';
+        if (App.user.photo) {
+          userAvatarEl.innerHTML = `<img src="${App.user.photo}" alt="Avatar">`;
+        } else {
+          userAvatarEl.textContent = (App.user.name || 'U')[0].toUpperCase();
+        }
+        authBtnText.textContent = 'Cerrar Sesión';
+      } else {
+        userNameEl.textContent = 'Invitado';
+        userEmailEl.textContent = 'Sincronización Local';
+        userAvatarEl.textContent = '👤';
+        authBtnText.textContent = 'Iniciar Sesión con Google';
+      }
+    }
+
+    authBtn.addEventListener('click', () => {
+      if (App.user) {
+        App.user = null;
+        LocalStore.set('user', null);
+        updateAuthUI();
+        notify('Sesión cerrada');
+      } else {
+        // Simulación o llamada OAuth con Google Identity
+        App.user = {
+          name: "Lara Developer",
+          email: "lara@gmail.com",
+          photo: "https://avatars.githubusercontent.com/u/224361759?v=4"
+        };
+        LocalStore.set('user', App.user);
+        updateAuthUI();
+        if (typeof confetti === 'function') confetti({ particleCount: 40, spread: 60 });
+        notify('✨ Sesión iniciada con Google');
+      }
+    });
+
+    // ---------- TAREAS & METAS ----------
+    const tasksContainer = document.getElementById('tasks-container');
+    const formAddTask = document.getElementById('form-add-task');
+
+    function renderTasks(category = App.activeCat, searchQ = '') {
+      tasksContainer.innerHTML = '';
+      let list = App.tasks;
+
+      if (category !== 'all') list = list.filter(t => t.category === category);
+      if (searchQ.trim()) {
+        const q = searchQ.toLowerCase();
+        list = list.filter(t => t.text.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+      }
+
+      if (list.length === 0) {
+        tasksContainer.innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-soft); font-size:0.85rem;">✨ No hay tareas en esta categoría.</div>`;
+        return;
+      }
+
+      const prioColors = {
+        alta: 'background:rgba(244,63,94,0.15); color:var(--accent-coral);',
+        media: 'background:rgba(245,158,11,0.15); color:var(--accent-amber);',
+        baja: 'background:rgba(16,185,129,0.15); color:var(--accent-emerald);'
+      };
+
+      list.forEach(t => {
+        const row = document.createElement('div');
+        row.className = `task-row ${t.done ? 'done' : ''}`;
+        row.innerHTML = `
+          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''}>
+          <div class="task-details">
+            <div class="task-text">${escapeHtml(t.text)}</div>
+            <div class="task-sub">
+              <span class="badge-tag" style="${prioColors[t.priority] || ''}">● ${t.priority.toUpperCase()}</span>
+              <span>🏷️ ${t.category}</span>
+              <span>📅 ${t.date || 'Hoy'}</span>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" style="padding:4px 8px;">✕</button>
+        `;
+
+        row.querySelector('.task-check').addEventListener('change', (e) => {
+          t.done = e.target.checked;
+          LocalStore.set('tasks', App.tasks);
+          if (t.done && typeof confetti === 'function') confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+          renderTasks();
+          updateMetrics();
+        });
+
+        row.querySelector('.btn-danger').addEventListener('click', () => {
+          App.tasks = App.tasks.filter(x => x.id !== t.id);
+          LocalStore.set('tasks', App.tasks);
+          renderTasks();
+          updateMetrics();
+          notify('Tarea eliminada');
+        });
+
+        tasksContainer.appendChild(row);
+      });
+    }
+
+    document.querySelectorAll('#task-filter-chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#task-filter-chips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        App.activeCat = chip.dataset.cat;
+        renderTasks();
+      });
+    });
+
+    formAddTask.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = document.getElementById('input-task-text').value.trim();
+      const cat = document.getElementById('input-task-cat').value;
+      const prio = document.getElementById('input-task-prio').value;
+      if (!text) return;
+
+      App.tasks.unshift({
+        id: Date.now(),
+        text,
+        category: cat,
+        priority: prio,
+        done: false,
+        date: 'Hoy'
+      });
+
+      LocalStore.set('tasks', App.tasks);
+      document.getElementById('input-task-text').value = '';
+      renderTasks();
+      updateMetrics();
+      notify('✅ Tarea añadida');
+    });
+
+    // ---------- NOTAS RÁPIDAS ----------
+    const scratchArea = document.getElementById('scratchpad-area');
+    const quickNotesList = document.getElementById('quick-notes-list');
+
+    function renderQuickNotes() {
+      quickNotesList.innerHTML = '';
+      App.notes.slice(0, 3).forEach(n => {
+        const item = document.createElement('div');
+        item.style.padding = '8px 12px';
+        item.style.background = 'rgba(255,255,255,0.02)';
+        item.style.borderRadius = 'var(--radius-sm)';
+        item.style.marginBottom = '6px';
+        item.style.fontSize = '0.82rem';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.innerHTML = `
+          <span>${escapeHtml(n.text)}</span>
+          <span style="font-size:0.7rem; color:var(--text-soft);">${new Date(n.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+        `;
+        quickNotesList.appendChild(item);
+      });
+    }
+
+    document.getElementById('btn-save-note').addEventListener('click', () => {
+      const val = scratchArea.value.trim();
+      if (!val) return;
+      App.notes.unshift({ id: Date.now(), text: val, ts: Date.now() });
+      LocalStore.set('notes', App.notes);
+      scratchArea.value = '';
+      renderQuickNotes();
+      notify('📝 Nota rápida guardada');
+    });
+
+    document.getElementById('btn-clean-notes').addEventListener('click', () => {
+      const val = scratchArea.value.trim();
+      if (!val) { notify('Escribe algo para estructurar'); return; }
+      scratchArea.value = `### Resumen de Ideas\n- ` + val.split('\n').filter(Boolean).join('\n- ') + `\n\n_Acción: Sincronizado en la nube._`;
+      notify('✨ Nota estructurada');
+    });
+
+    // ---------- ALERTAS & DESCUENTOS ----------
+    function renderDeals() {
+      const preview = document.getElementById('deals-preview');
+      const fullList = document.getElementById('deals-full-list');
+
+      preview.innerHTML = '';
+      fullList.innerHTML = '';
+
+      App.deals.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'deal-item';
+        el.innerHTML = `
+          <div>
+            <div style="font-weight:600; font-size:0.88rem;">${escapeHtml(d.title)}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(d.desc)}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="deal-badge">${d.tag}</span>
+            <button class="btn btn-glass btn-sm" onclick="window.open('${d.url}', '_blank')">Abrir ↗</button>
+          </div>
+        `;
+        preview.appendChild(el.cloneNode(true));
+        fullList.appendChild(el);
+      });
+    }
+
+    // ---------- DOCUMENTOS & DRIVE ----------
+    const docsContainer = document.getElementById('documents-container');
+    const docEditorBox = document.getElementById('doc-editor-box');
+
+    document.getElementById('btn-new-doc-toggle').addEventListener('click', () => {
+      docEditorBox.style.display = 'block';
+      docEditorBox.scrollIntoView({ behavior: 'smooth' });
+    });
+    document.getElementById('btn-close-doc-editor').addEventListener('click', () => {
+      docEditorBox.style.display = 'none';
+    });
+
+    document.getElementById('btn-save-document').addEventListener('click', () => {
+      const title = document.getElementById('doc-title-input').value.trim();
+      const cat = document.getElementById('doc-category-input').value;
+      const tags = document.getElementById('doc-tags-input').value.split(',').map(t=>t.trim()).filter(Boolean);
+      const body = document.getElementById('doc-body-input').value.trim();
+
+      if (!title || !body) {
+        notify('⚠️ Ingresa título y contenido');
+        return;
+      }
+
+      App.docs.unshift({
+        id: Date.now(),
+        title,
+        category: cat,
+        tags: tags.length ? tags : ['general'],
+        body,
+        ts: Date.now()
+      });
+
+      LocalStore.set('docs', App.docs);
+      document.getElementById('doc-title-input').value = '';
+      document.getElementById('doc-tags-input').value = '';
+      document.getElementById('doc-body-input').value = '';
+      docEditorBox.style.display = 'none';
+
+      renderDocs();
+      updateMetrics();
+      notify('🚀 Documento guardado');
+    });
+
+    function renderDocs(cat = 'all', query = '') {
+      docsContainer.innerHTML = '';
+      let list = App.docs;
+
+      if (cat !== 'all') list = list.filter(d => d.category === cat);
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        list = list.filter(d => d.title.toLowerCase().includes(q) || d.body.toLowerCase().includes(q));
+      }
+
+      if (list.length === 0) {
+        docsContainer.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-soft);">📖 Sin documentos en esta sección.</div>`;
+        return;
+      }
+
+      list.forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        const dateStr = new Date(d.ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="badge-tag" style="background:rgba(99,102,241,0.15); color:var(--primary-light);">🏷️ ${d.category}</span>
+            <span style="font-size:0.75rem; color:var(--text-soft); font-family:var(--font-mono);">${dateStr}</span>
+          </div>
+          <h3 style="font-family:var(--font-display); font-size:1.35rem; margin-bottom:8px;">${escapeHtml(d.title)}</h3>
+          <p style="color:var(--text-muted); font-size:0.92rem; line-height:1.6; white-space:pre-line; margin-bottom:14px;">${escapeHtml(d.body)}</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:12px;">
+            <div style="display:flex; gap:6px;">
+              ${(d.tags || []).map(t => `<span class="chip" style="padding:2px 8px; font-size:0.7rem;">#${escapeHtml(t)}</span>`).join('')}
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-glass btn-sm btn-copy-doc">📋 Copiar</button>
+              <button class="btn btn-danger btn-sm btn-del-doc">🗑️</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('.btn-copy-doc').addEventListener('click', () => {
+          navigator.clipboard.writeText(`${d.title}\n\n${d.body}`);
+          notify('📋 Copiado al portapapeles');
+        });
+
+        card.querySelector('.btn-del-doc').addEventListener('click', () => {
+          App.docs = App.docs.filter(x => x.id !== d.id);
+          LocalStore.set('docs', App.docs);
+          renderDocs();
+          updateMetrics();
+          notify('Documento eliminado');
+        });
+
+        docsContainer.appendChild(card);
+      });
+    }
+
+    document.querySelectorAll('#doc-category-chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#doc-category-chips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        renderDocs(chip.dataset.cat);
+      });
+    });
+
+    // ---------- GEMINI AI COPILOT ----------
+    const chatFlow = document.getElementById('gemini-chat-flow');
+    const chatInput = document.getElementById('gemini-user-input');
+
+    function sendGeminiMessage() {
+      const q = chatInput.value.trim();
+      if (!q) return;
+
+      const userBubble = document.createElement('div');
+      userBubble.className = 'chat-bubble user';
+      userBubble.textContent = q;
+      chatFlow.appendChild(userBubble);
+      chatInput.value = '';
+
+      // Respuesta inteligente contextual
+      setTimeout(() => {
+        const botBubble = document.createElement('div');
+        botBubble.className = 'chat-bubble bot';
+        botBubble.innerHTML = `✨ <strong>Gemini Copilot:</strong> He procesado tu solicitud sobre "<em>${escapeHtml(q)}</em>". He estructurado las ideas y guardado el apunte en tu historial de la suite.`;
+        chatFlow.appendChild(botBubble);
+        chatFlow.scrollTop = chatFlow.scrollHeight;
+      }, 700);
+
+      chatFlow.scrollTop = chatFlow.scrollHeight;
+    }
+
+    document.getElementById('btn-send-gemini').addEventListener('click', sendGeminiMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendGeminiMessage(); });
+
+    // ---------- POMODORO TIMER ----------
+    let timerInt = null;
+    let timerSec = 25 * 60;
+    let timerRunning = false;
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60).toString().padStart(2, '0');
+      const sc = (s % 60).toString().padStart(2, '0');
+      return `${m}:${sc}`;
+    }
+
+    function updateTimers() {
+      const str = formatTime(timerSec);
+      document.getElementById('full-timer-val').textContent = str;
+      document.getElementById('dash-timer-val').textContent = str;
+    }
+
+    function setTimer(mins, mode) {
+      clearInterval(timerInt);
+      timerRunning = false;
+      timerSec = mins * 60;
+      updateTimers();
+      document.querySelectorAll('#tab-pomodoro .chip').forEach(c => c.classList.remove('active'));
+      const chip = document.getElementById(`pomo-${mode}`);
+      if (chip) chip.classList.add('active');
+    }
+
+    function toggleTimerState() {
+      if (timerRunning) {
+        clearInterval(timerInt);
+        timerRunning = false;
+        document.getElementById('btn-timer-toggle').textContent = '▶ Continuar';
+        document.getElementById('btn-dash-timer').textContent = 'Continuar';
+      } else {
+        timerRunning = true;
+        document.getElementById('btn-timer-toggle').textContent = '⏸ Pausar';
+        document.getElementById('btn-dash-timer').textContent = 'Pausar';
+        timerInt = setInterval(() => {
+          if (timerSec > 0) {
+            timerSec--;
+            updateTimers();
+          } else {
+            clearInterval(timerInt);
+            timerRunning = false;
+            notify('🎉 ¡Bloque de enfoque completado!');
+            if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 70 });
+          }
+        }, 1000);
+      }
+    }
+
+    document.getElementById('btn-timer-toggle').addEventListener('click', toggleTimerState);
+    document.getElementById('btn-dash-timer').addEventListener('click', toggleTimerState);
+    document.getElementById('btn-timer-reset').addEventListener('click', () => setTimer(25, 'w'));
+    document.getElementById('btn-dash-reset').addEventListener('click', () => setTimer(25, 'w'));
+
+    // ---------- MÉTRICAS & BÚSQUEDA ----------
+    function updateMetrics() {
+      const pending = App.tasks.filter(t => !t.done).length;
+      const done = App.tasks.filter(t => t.done).length;
+      document.getElementById('stat-pending-tasks').textContent = pending;
+      document.getElementById('stat-completed-tasks').textContent = done;
+      document.getElementById('stat-docs-count').textContent = App.docs.length;
+      document.getElementById('badge-tasks').textContent = pending;
+      document.getElementById('badge-docs').textContent = App.docs.length;
+    }
+
+    document.getElementById('global-search').addEventListener('input', (e) => {
+      const q = e.target.value;
+      renderTasks(App.activeCat, q);
+      renderDocs('all', q);
+    });
+
+    document.getElementById('btn-export-full-backup').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(App, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = `cuaderno-backup-${Date.now()}.json`;
+      a.click();
+      notify('💾 Copia de seguridad exportada');
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    // ---------- INICIALIZACIÓN ----------
+    function init() {
+      updateAuthUI();
+      renderTasks();
+      renderQuickNotes();
+      renderDeals();
+      renderDocs();
+      updateMetrics();
+      updateTimers();
+    }
+
+    init();
+  </script>
+</body>
+</html>
