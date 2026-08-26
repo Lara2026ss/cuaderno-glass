@@ -1,0 +1,31 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+
+# Firebase Service Account Credentials (Strictly Backend)
+*firebase-adminsdk*.json
+*serviceAccount*.json
+*service-account*.json
+credentials.json
+alero-company-works-*.json
+storage/*.json
+
+# Logs & System
+*.log
+.DS_Store
+Thumbs.db
+
+# Temp & Scratch files
+scratch/
+scratch_*.json
+tmp/
+temp/
