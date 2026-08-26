@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Módulo de Descuentos & Rastreador de Precios Multitienda
+ * Cuaderno Glass Pro 4.0 — Módulo de Descuentos & Rastreador de Precios Multitienda 4.5
  */
 
 import { store } from '../app/state.js';
@@ -125,8 +125,8 @@ export class DealsFeature {
 
     if (list.length === 0) {
       const emptyHtml = `
-        <div style="text-align:center; padding:28px 10px; color:var(--text-soft); font-size:0.86rem;">
-          🎁 No hay productos en seguimiento todavía. Añade uno de Amazon, Eneba, Mercado Libre o Steam arriba.
+        <div style="text-align:center; padding:24px 10px; color:var(--text-soft); font-size:0.84rem;">
+          🎁 No hay productos en seguimiento todavía. Añade uno de Amazon, Eneba, Mercado Libre o Steam.
         </div>
       `;
       if (this.previewContainer) this.previewContainer.innerHTML = emptyHtml;
@@ -140,21 +140,21 @@ export class DealsFeature {
       const safeUrl = sanitizeUrl(item.url);
 
       const statusBadges = {
-        TARGET_REACHED: '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">🔥 ¡Precio Alcanzado!</span>',
+        TARGET_REACHED: '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">🔥 ¡Meta Alcanzada!</span>',
         PRICE_DROP: '<span class="badge-tag" style="background:rgba(6,182,212,0.22); color:var(--accent-cyan);">⚡ Bajó de Precio</span>',
         DISCOUNT: '<span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">🏷️ En Oferta</span>',
-        NORMAL: '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">⏳ Precio Normal</span>'
+        NORMAL: '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">⏳ Normal</span>'
       };
 
       const card = document.createElement('div');
       card.className = 'tracker-item';
       card.innerHTML = `
         <div class="tracker-head">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.15rem;">${storeObj.icon}</span>
-            <div>
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span style="font-size:1.15rem; flex-shrink:0;">${storeObj.icon}</span>
+            <div style="min-width:0;">
               <div class="tracker-title">${escapeHtml(item.productName)}</div>
-              <div style="font-size:0.72rem; color:var(--text-soft);">${escapeHtml(item.store)} · Verificado ${formatDate(item.lastChecked)}</div>
+              <div style="font-size:0.7rem; color:var(--text-soft);">${escapeHtml(item.store)} · Verificado ${formatDate(item.lastChecked)}</div>
             </div>
           </div>
           <div>${statusBadges[item.status] || ''}</div>
@@ -167,12 +167,12 @@ export class DealsFeature {
           ${item.targetPrice > 0 ? `<span class="tracker-target-price">🎯 Meta: $${item.targetPrice}</span>` : ''}
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:10px; margin-top:4px;">
-          <div style="display:flex; gap:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:8px; margin-top:2px; flex-wrap:wrap; gap:6px;">
+          <div style="display:flex; gap:6px;">
             <button class="btn btn-glass btn-sm btn-history" title="Ver historial de precios">📈 Historial</button>
             <button class="btn btn-glass btn-sm btn-check-now" title="Verificar precio ahora">🔄 Chequear</button>
           </div>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:6px;">
             <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Ir a Tienda ↗</a>
             <button class="btn btn-danger btn-sm btn-delete-tracker" title="Eliminar">🗑️</button>
           </div>

@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Inicializador Maestro & Error Boundary
+ * Cuaderno Glass Pro 4.0 — Inicializador Maestro & Error Boundary 4.5
  */
 
 import { store } from './state.js';
@@ -25,7 +25,7 @@ import { pomodoroFeature } from '../features/pomodoro.js';
 import { searchFeature } from '../features/search.js';
 
 export class AppBootstrap {
-  init() {
+  async init() {
     this._setupGlobalErrorBoundaries();
     this._setupTheme();
     this._setupNavigation();
@@ -47,7 +47,7 @@ export class AppBootstrap {
 
     // Inicializar Sincronizador & Auth
     synchronizer.init();
-    authService.init();
+    await authService.init();
 
     // Inicializar Router
     router.init();
@@ -122,10 +122,18 @@ export class AppBootstrap {
         documentsFeature.toggleEditor(true);
       });
     }
+
+    const btnGotoDeals = document.getElementById('btn-goto-deals');
+    if (btnGotoDeals) {
+      btnGotoDeals.addEventListener('click', () => {
+        audio.soundClick();
+        router.navigate('deals');
+      });
+    }
   }
 
   _setupIntegrations() {
-    // Registrar todas las integraciones en el registry
+    // Registrar todas las integraciones en el registry (FASE 18)
     registry.register({
       id: 'firebase',
       name: 'Firebase Firestore & Auth',
@@ -180,7 +188,20 @@ export class AppBootstrap {
       healthCheck: async () => ({ ok: true })
     });
 
-    // Renderizar tarjetas de integraciones en tab-connectors
+    const btnRunAllHealth = document.getElementById('btn-run-all-health');
+    if (btnRunAllHealth) {
+      btnRunAllHealth.addEventListener('click', async () => {
+        toast.info('Ejecutando diagnóstico en todas las integraciones...');
+        const all = registry.getAll();
+        for (const item of all) {
+          await registry.testConnection(item.id);
+        }
+        toast.success('Diagnóstico global completado');
+        this._renderConnectorsView();
+      });
+    }
+
+    // Renderizar tarjetas de integraciones
     this._renderConnectorsView();
   }
 
@@ -205,15 +226,15 @@ export class AppBootstrap {
       card.innerHTML = `
         <div class="card-head">
           <div class="card-title">
-            <span style="font-size: 1.3rem;">${item.icon}</span>
+            <span style="font-size: 1.25rem;">${item.icon}</span>
             <span>${item.name}</span>
           </div>
           <span class="badge-tag" style="background:${st.bg}; color:${st.color};">${st.text}</span>
         </div>
-        <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:14px;">${item.description}</p>
-        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:10px;">
-          <span style="font-size:0.72rem; color:var(--text-soft);">ID: ${item.id}</span>
-          <div style="display:flex; gap:8px;">
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">${item.description}</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:10px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:0.7rem; color:var(--text-soft);">ID: ${item.id}</span>
+          <div style="display:flex; gap:6px;">
             <button class="btn btn-glass btn-sm btn-test-conn">Probar</button>
             <button class="btn btn-primary btn-sm btn-config-conn">Configurar</button>
           </div>
@@ -252,7 +273,7 @@ export class AppBootstrap {
           if (user.photoURL) {
             userAvatarEl.innerHTML = `<img src="${user.photoURL}" alt="Avatar" referrerpolicy="no-referrer">`;
           } else {
-            userAvatarEl.textContent = (user.displayName || 'U')[0].toUpperCase();
+            userAvatarEl.textContent = (user.displayName || user.email || 'U')[0].toUpperCase();
           }
         }
         if (authText) authText.textContent = 'Cerrar Sesión';
@@ -283,6 +304,7 @@ export class AppBootstrap {
           await authService.signOut();
         } else {
           try {
+            toast.info('Abriendo inicio de sesión con Google...');
             await authService.signInWithGoogle();
           } catch (e) {
             toast.error(e.message || 'Error al iniciar sesión');
@@ -307,6 +329,13 @@ export class AppBootstrap {
       backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) modals.close();
       });
+    });
+
+    // Cerrar con tecla Escape (FASE 17)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        modals.close();
+      }
     });
 
     // Botones de configuración

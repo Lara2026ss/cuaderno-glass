@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Repositorio Real Cloud Firestore
+ * Cuaderno Glass Pro 4.0 — Repositorio Cloud Firestore & Repository Layer
  */
 
 import { store } from '../app/state.js';
@@ -13,7 +13,7 @@ export class FirestoreRepository {
   }
 
   _getDb() {
-    if (!this.db && typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    if (!this.db && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
       this.db = firebase.firestore();
     }
     return this.db;
@@ -28,49 +28,92 @@ export class FirestoreRepository {
   }
 
   async saveItem(collectionName, item) {
+    const user = store.get('user');
+    const idToken = store.get('session.idToken');
+
+    // 1. Intentar Firestore SDK directo si usuario autenticado
     const userDoc = this._getUserDocRef();
-    if (!userDoc) {
-      // Modo local
-      return item;
+    if (userDoc) {
+      try {
+        const docRef = userDoc.collection(collectionName).doc(String(item.id));
+        const payload = {
+          ...item,
+          ownerId: user.uid,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await docRef.set(payload, { merge: true });
+        logger.debug('Firestore', `Item guardado vía Firestore SDK en ${collectionName}/${item.id}`);
+        return item;
+      } catch (err) {
+        logger.warn('Firestore', `Error en Firestore SDK para ${collectionName}, intentando backend fallback`, { error: err.message });
+      }
     }
 
-    try {
-      const docRef = userDoc.collection(collectionName).doc(String(item.id));
-      const payload = {
-        ...item,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      await docRef.set(payload, { merge: true });
-      logger.debug('Firestore', `Item guardado en ${collectionName}/${item.id}`);
-      return item;
-    } catch (err) {
-      logger.error('Firestore', `Error guardando en ${collectionName}`, { id: item.id, error: err.message });
-      store.enqueueMutation({ type: 'save', collection: collectionName, item });
-      throw err;
+    // 2. Fallback: Endpoint backend autenticado /api/user/:collection
+    if (idToken) {
+      try {
+        const endpoint = collectionName === 'priceTrackers' ? 'price-trackers' : collectionName;
+        const res = await fetch(`/api/user/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify(item)
+        });
+
+        if (res.ok) {
+          logger.debug('Firestore', `Item guardado vía API Backend en ${collectionName}/${item.id}`);
+          return item;
+        }
+      } catch (beErr) {
+        logger.warn('Firestore', `Backend API error para ${collectionName}`, { error: beErr.message });
+      }
     }
+
+    // 3. Fallback Local & Offline Queue
+    if (!store.get('sync.isOnline', true) || !user) {
+      store.enqueueMutation({ type: 'save', collection: collectionName, item });
+    }
+    return item;
   }
 
   async deleteItem(collectionName, itemId) {
+    const idToken = store.get('session.idToken');
     const userDoc = this._getUserDocRef();
-    if (!userDoc) return;
 
-    try {
-      await userDoc.collection(collectionName).doc(String(itemId)).delete();
-      logger.debug('Firestore', `Item eliminado de ${collectionName}/${itemId}`);
-    } catch (err) {
-      logger.error('Firestore', `Error eliminando de ${collectionName}`, { id: itemId, error: err.message });
-      store.enqueueMutation({ type: 'delete', collection: collectionName, itemId });
-      throw err;
+    if (userDoc) {
+      try {
+        await userDoc.collection(collectionName).doc(String(itemId)).delete();
+        logger.debug('Firestore', `Item eliminado vía Firestore SDK de ${collectionName}/${itemId}`);
+        return true;
+      } catch (err) {
+        logger.warn('Firestore', `Error en Firestore SDK al eliminar ${collectionName}/${itemId}`, { error: err.message });
+      }
     }
+
+    if (idToken) {
+      try {
+        const endpoint = collectionName === 'priceTrackers' ? 'price-trackers' : collectionName;
+        const res = await fetch(`/api/user/${endpoint}/${itemId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+        if (res.ok) return true;
+      } catch (e) {}
+    }
+
+    store.enqueueMutation({ type: 'delete', collection: collectionName, itemId });
+    return true;
   }
 
-  // Sincronización en tiempo real de una colección
+  // Sincronización en tiempo real con Firestore
   subscribeToCollection(collectionName, statePath) {
     const userDoc = this._getUserDocRef();
     if (!userDoc) return () => {};
 
     if (this.activeListeners.has(collectionName)) {
-      this.activeListeners.get(collectionName)(); // desuscribir previo
+      this.activeListeners.get(collectionName)();
     }
 
     try {
@@ -85,14 +128,14 @@ export class FirestoreRepository {
           events.emit(`firestore:${collectionName}:synced`, items);
         },
         err => {
-          logger.error('Firestore', `Error en listener de ${collectionName}`, { error: err.message });
+          logger.warn('Firestore', `Listener degradado en ${collectionName}: ${err.message}`);
         }
       );
 
       this.activeListeners.set(collectionName, unsubscribe);
       return unsubscribe;
     } catch (err) {
-      logger.error('Firestore', `Fallo al suscribir a ${collectionName}`, { error: err.message });
+      logger.warn('Firestore', `No se pudo suscribir a ${collectionName}`, { error: err.message });
       return () => {};
     }
   }

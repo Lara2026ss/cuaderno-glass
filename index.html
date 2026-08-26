@@ -144,15 +144,16 @@
 
               <div id="tasks-container"></div>
 
-              <form id="form-add-task" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
-                <input type="text" id="input-task-text" placeholder="¿Qué meta tienes hoy?" style="flex: 2; min-width: 170px;" required>
-                <select id="input-task-cat" style="flex: 1; min-width: 110px;">
+              <!-- Formulario Rediseñado FASE 14 -->
+              <form id="form-add-task" class="form-task-grid">
+                <input type="text" id="input-task-text" placeholder="¿Qué meta tienes hoy?" required>
+                <select id="input-task-cat">
                   <option value="Trabajo">💼 Trabajo</option>
                   <option value="Personal">🌿 Personal</option>
                   <option value="Estudio">📚 Estudio</option>
                   <option value="Ideas">💡 Ideas</option>
                 </select>
-                <select id="input-task-prio" style="width: 110px;">
+                <select id="input-task-prio">
                   <option value="media">⚡ Media</option>
                   <option value="alta">🔥 Alta</option>
                   <option value="baja">🌱 Baja</option>
@@ -182,7 +183,7 @@
             <div class="glass-card">
               <div class="card-head">
                 <div class="card-title" style="color: var(--accent-emerald);">🔔 Alertas de Ofertas</div>
-                <button class="btn btn-glass btn-sm" onclick="window.location.hash='deals'">Ver Todas</button>
+                <button class="btn btn-glass btn-sm" id="btn-goto-deals">Ver Todas</button>
               </div>
               <div id="deals-preview"></div>
             </div>
@@ -214,7 +215,7 @@
           </div>
           <form id="form-add-tracker" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 160px;">
+              <div style="flex: 1; min-width: 150px;">
                 <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Tienda</label>
                 <select id="input-tracker-store">
                   <option value="Amazon">🛒 Amazon</option>
@@ -224,7 +225,7 @@
                   <option value="Tienda Online">🌐 Otra Tienda</option>
                 </select>
               </div>
-              <div style="flex: 2; min-width: 220px;">
+              <div style="flex: 2; min-width: 200px;">
                 <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Nombre del Producto</label>
                 <input type="text" id="input-tracker-name" placeholder="Ej. Cyberpunk 2077 Key / Monitor LG 27''" required>
               </div>
@@ -235,17 +236,17 @@
               <input type="url" id="input-tracker-url" placeholder="https://www.eneba.com/..." required>
             </div>
 
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 120px;">
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Normal / Lista ($)</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Normal ($)</label>
                 <input type="number" step="0.01" id="input-tracker-normal" placeholder="Ej. 59.99">
               </div>
-              <div style="flex: 1; min-width: 120px;">
+              <div>
                 <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Actual ($)</label>
                 <input type="number" step="0.01" id="input-tracker-current" placeholder="Ej. 29.99">
               </div>
-              <div style="flex: 1; min-width: 120px;">
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Objetivo / Alerta ($)</label>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Meta ($)</label>
                 <input type="number" step="0.01" id="input-tracker-target" placeholder="Ej. 25.00">
               </div>
             </div>
@@ -281,16 +282,16 @@
             <div class="card-title">✍️ Redactar Documento / Nota</div>
             <button class="btn btn-glass btn-sm" id="btn-close-doc-editor">✕ Cerrar</button>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            <input type="text" id="doc-title-input" placeholder="Título del documento..." style="font-size: 1.1rem; font-weight: 600;">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="text" id="doc-title-input" placeholder="Título del documento..." style="font-size: 1.05rem; font-weight: 600;">
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <select id="doc-category-input" style="flex: 1; min-width: 140px;">
+              <select id="doc-category-input" style="flex: 1; min-width: 130px;">
                 <option value="Trabajo">💼 Trabajo</option>
                 <option value="Personal">🌿 Personal</option>
                 <option value="Estudio">📚 Estudio</option>
                 <option value="Ideas">💡 Ideas</option>
               </select>
-              <input type="text" id="doc-tags-input" placeholder="Etiquetas separadas por comas (ej. backend, render, api)" style="flex: 2; min-width: 180px;">
+              <input type="text" id="doc-tags-input" placeholder="Etiquetas separadas por comas (ej. backend, render, api)" style="flex: 2; min-width: 170px;">
             </div>
             <textarea id="doc-body-input" rows="8" placeholder="Escribe el contenido en Markdown..."></textarea>
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -333,11 +334,14 @@
         </div>
       </section>
 
-      <!-- =================== TAB 5: APPS CONECTADAS =================== -->
+      <!-- =================== TAB 5: APPS & DIAGNOSTICS =================== -->
       <section class="view-content" id="tab-connectors">
-        <div class="view-header">
-          <h1>Centro de Integraciones & Webhooks</h1>
-          <p>Arquitectura desacoplada para interactuar con Firebase, Discord, GitHub, Render, Google Drive y Gemini.</p>
+        <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h1>Centro de Integraciones & Diagnóstico</h1>
+            <p>Monitoreo en tiempo real de Firebase, Google Drive, GitHub, Discord, Render y Gemini.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-run-all-health">🩺 Ejecutar Health Check Global</button>
         </div>
 
         <div class="grid-2" id="connectors-cards-grid"></div>
@@ -360,18 +364,18 @@
           <p>Estructura tus bloques de concentración sin interrupciones con sintetizador acústico.</p>
         </div>
 
-        <div class="glass-card" style="max-width: 640px; margin: 0 auto; text-align: center;">
-          <div class="chips-bar" style="justify-content: center; margin-bottom: 18px;">
+        <div class="glass-card" style="max-width: 600px; margin: 0 auto; text-align: center;">
+          <div class="chips-bar" style="justify-content: center; margin-bottom: 16px;">
             <span class="chip active" id="pomo-w">💼 Trabajo (25m)</span>
             <span class="chip" id="pomo-s">☕ Descanso (5m)</span>
             <span class="chip" id="pomo-l">🌿 Pausa Larga (15m)</span>
           </div>
 
-          <div style="font-family: var(--font-mono); font-size: 5.2rem; font-weight: 800; color: #e0e7ff; margin: 18px 0; text-shadow: 0 0 30px var(--primary-glow);" id="full-timer-val">25:00</div>
+          <div style="font-family: var(--font-mono); font-size: 4.8rem; font-weight: 800; color: #e0e7ff; margin: 16px 0; text-shadow: 0 0 30px var(--primary-glow);" id="full-timer-val">25:00</div>
 
           <div style="display: flex; justify-content: center; gap: 12px;">
-            <button class="btn btn-primary" id="btn-timer-toggle" style="padding: 12px 32px; font-size: 1rem;">▶ Iniciar</button>
-            <button class="btn btn-glass" id="btn-timer-reset" style="padding: 12px 22px;">↺ Reiniciar</button>
+            <button class="btn btn-primary" id="btn-timer-toggle" style="padding: 10px 28px; font-size: 0.95rem;">▶ Iniciar</button>
+            <button class="btn btn-glass" id="btn-timer-reset" style="padding: 10px 20px;">↺ Reiniciar</button>
           </div>
         </div>
       </section>
@@ -386,36 +390,36 @@
     <div class="modal-card">
       <div class="card-head">
         <div class="card-title">⚙️ Configuración de la Suite</div>
-        <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
+        <button class="btn btn-glass btn-sm btn-close-modal" aria-label="Cerrar">✕</button>
       </div>
 
-      <form id="form-settings" style="display: flex; flex-direction: column; gap: 14px;">
-        <h4 style="font-size: 0.95rem; color: var(--primary-light); margin-top: 4px;">🔥 Firebase Configuration (Google Auth / Firestore)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <input type="text" id="setting-fb-apikey" placeholder="apiKey">
-          <input type="text" id="setting-fb-authdomain" placeholder="authDomain (ej. app.firebaseapp.com)">
+      <form id="form-settings" style="display: flex; flex-direction: column; gap: 12px;">
+        <h4 style="font-size: 0.9rem; color: var(--primary-light); margin-top: 4px;">🔥 Firebase Configuration (Google Auth / Firestore)</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
+          <input type="text" id="setting-fb-apikey" placeholder="apiKey (opcional si usa backend)">
+          <input type="text" id="setting-fb-authdomain" placeholder="authDomain">
           <input type="text" id="setting-fb-projectid" placeholder="projectId">
           <input type="text" id="setting-fb-storagebucket" placeholder="storageBucket">
         </div>
-        <input type="text" id="setting-fb-appid" placeholder="appId (ej. 1:123456:web:abcdef)">
+        <input type="text" id="setting-fb-appid" placeholder="appId">
 
-        <h4 style="font-size: 0.95rem; color: var(--accent-render); margin-top: 8px;">⚡ Integraciones & Tokens</h4>
+        <h4 style="font-size: 0.9rem; color: var(--accent-render); margin-top: 6px;">⚡ Integraciones & Tokens</h4>
         <input type="text" id="setting-discord-webhook" placeholder="Discord Webhook URL (https://discord.com/api/webhooks/...)">
         <input type="text" id="setting-github-repo" placeholder="GitHub Repo (ej. Lara2026ss/cuaderno-glass)">
         <input type="password" id="setting-render-apikey" placeholder="Render API Key (opcional para monitoreo)">
         <input type="password" id="setting-gemini-apikey" placeholder="Gemini API Key (opcional si corre en backend)">
 
-        <h4 style="font-size: 0.95rem; color: var(--accent-cyan); margin-top: 8px;">🔊 Sonido y Notificaciones</h4>
+        <h4 style="font-size: 0.9rem; color: var(--accent-cyan); margin-top: 6px;">🔊 Sonido y Notificaciones</h4>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <label style="font-size: 0.88rem;">Efectos de Sonido (Web Audio API)</label>
-          <input type="checkbox" id="setting-audio-toggle" checked style="width: 20px; height: 20px;">
+          <label style="font-size: 0.85rem;">Efectos de Sonido (Web Audio API)</label>
+          <input type="checkbox" id="setting-audio-toggle" checked style="width: 18px; height: 18px;">
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <label style="font-size: 0.82rem; color: var(--text-muted);">Volumen:</label>
+          <label style="font-size: 0.8rem; color: var(--text-muted);">Volumen:</label>
           <input type="range" id="setting-audio-volume" min="0" max="100" value="50" style="flex: 1;">
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
           <button type="button" class="btn btn-glass btn-sm btn-close-modal">Cancelar</button>
           <button type="submit" class="btn btn-primary btn-sm">Guardar Cambios</button>
         </div>
@@ -431,7 +435,7 @@
         <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
       </div>
       <div id="migration-modal-body"></div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
         <button type="button" class="btn btn-glass btn-sm btn-close-modal">Mantener Solo Local</button>
         <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-migration">🚀 Migrar a Firestore</button>
       </div>
@@ -446,7 +450,7 @@
         <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
       </div>
       <div id="price-history-content"></div>
-      <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
         <button type="button" class="btn btn-glass btn-sm btn-close-modal">Cerrar</button>
       </div>
     </div>
