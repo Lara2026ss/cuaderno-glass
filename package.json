@@ -1,32 +1,30 @@
 {
   "name": "cuaderno-glass",
-  "version": "4.0.0",
-  "description": "Suite Web Modular & Cloud Hub con Ultra-Glassmorphism, Firebase Auth/Firestore real, Gemini AI, Price Tracker multitienda (Amazon, Eneba, Mercado Libre, Steam) y Web Audio API",
+  "version": "6.0.0",
+  "description": "Cuaderno Glass Pro — Suite de Productividad Personal, Cloud Hub & Rastreador de Ofertas",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "node build.js",
-    "test": "node tests/run-all.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "firebase-admin": "^13.6.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "dev": "node server.js",
+    "test": "node tests/run-all.js",
+    "test:security": "node tests/security-scan.test.js",
+    "test:html": "node tests/html-audit.test.js",
+    "build": "node build.js"
   },
   "keywords": [
+    "productivity",
     "glassmorphism",
     "firebase",
-    "google-auth",
-    "firestore",
-    "gemini-ai",
-    "price-tracker",
-    "web-audio-api",
-    "discord-webhook",
-    "render"
+    "gemini",
+    "google-drive",
+    "price-tracker"
   ],
-  "author": "Lara2026ss",
-  "license": "MIT"
+  "author": "Mauricio / Alero Company",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.1.0"
+  }
 }

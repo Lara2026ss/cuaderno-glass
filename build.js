@@ -1,54 +1,50 @@
 /**
- * Cuaderno Glass Pro 4.0 — Build Script & Bundler
+ * Cuaderno Glass Pro — Compilador y Bundler de Producción
+ * Empaqueta todos los estilos, scripts y módulos en dist/cuaderno.html
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function build() {
-  console.log('📦 Iniciando compilación de Cuaderno Glass Pro 4.0...');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  const rootDir = __dirname;
-  const distDir = path.join(rootDir, 'dist');
-  if (!fs.existsSync(distDir)) {
-    fs.mkdirSync(distDir, { recursive: true });
+console.log('📦 Iniciando compilación de Cuaderno Glass Pro 4.0...');
+
+const distDir = path.join(__dirname, 'dist');
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true });
+}
+
+const indexPath = path.join(__dirname, 'index.html');
+let htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+// 1. Inyectar estilos CSS internos
+const stylesDir = path.join(__dirname, 'src', 'styles');
+if (fs.existsSync(stylesDir)) {
+  const cssFiles = ['glass.css', 'components.css', 'responsive.css'];
+  let combinedCss = '';
+  
+  for (const cssFile of cssFiles) {
+    const fullPath = path.join(stylesDir, cssFile);
+    if (fs.existsSync(fullPath)) {
+      combinedCss += `\n/* === ${cssFile} === */\n` + fs.readFileSync(fullPath, 'utf-8');
+    }
   }
 
-  // 1. Leer estilos
-  const glassCss = fs.readFileSync(path.join(rootDir, 'src', 'styles', 'glass.css'), 'utf-8');
-  const compCss = fs.readFileSync(path.join(rootDir, 'src', 'styles', 'components.css'), 'utf-8');
-  const respCss = fs.readFileSync(path.join(rootDir, 'src', 'styles', 'responsive.css'), 'utf-8');
-  const combinedCss = `${glassCss}\n\n${compCss}\n\n${respCss}`;
-
-  // 2. Leer index.html base
-  let indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf-8');
-
-  // Reemplazar enlaces a CSS externos por <style> inline
-  const styleTag = `<style>\n${combinedCss}\n</style>`;
-  indexHtml = indexHtml.replace(
-    /<link rel="stylesheet" href="src\/styles\/glass\.css">[\s\S]*?<link rel="stylesheet" href="src\/styles\/responsive\.css">/,
-    styleTag
+  // Reemplazar enlaces locales de estilos por bloque <style> embebido
+  htmlContent = htmlContent.replace(
+    /<link\s+rel="stylesheet"\s+href="src\/styles\/[^"]*">/gi,
+    ''
   );
 
-  // 3. Escribir distribución en dist/cuaderno.html
-  const distFile = path.join(distDir, 'cuaderno.html');
-  fs.writeFileSync(distFile, indexHtml, 'utf-8');
-  console.log(`✅ Build generado en: ${distFile}`);
-
-  // 4. Copiar a Downloads para uso local inmediato si existe ruta
-  const downloadsPath = path.join('c:', 'Users', 'mauri', 'Downloads', 'cuaderno.html');
-  try {
-    fs.writeFileSync(downloadsPath, indexHtml, 'utf-8');
-    console.log(`✅ Sincronizado en Descargas: ${downloadsPath}`);
-  } catch (err) {
-    console.warn(`⚠️ No se pudo copiar a Descargas: ${err.message}`);
-  }
-
-  console.log('🎉 Compilación finalizada exitosamente.');
+  htmlContent = htmlContent.replace('</head>', `<style>\n${combinedCss}\n</style>\n</head>`);
 }
 
-if (require.main === module) {
-  build();
-}
+// 2. Escribir archivo de distribución en dist/cuaderno.html
+const outputDistPath = path.join(distDir, 'cuaderno.html');
+fs.writeFileSync(outputDistPath, htmlContent, 'utf-8');
+console.log(`✅ Build generado exclusivamente en: ${outputDistPath}`);
 
-module.exports = { build };
+console.log('🎉 Compilación finalizada exitosamente.');
