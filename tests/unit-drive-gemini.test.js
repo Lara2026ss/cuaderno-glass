@@ -21,9 +21,9 @@ export async function runDriveGeminiTests() {
   assert.strictEqual(store.get('connections.googleDrive.status'), 'disconnected');
   console.log('  ✓ Google Drive adapter: ciclo de conexión y estado validado');
 
-  // Test 2: Gemini Tool Schemas Whitelist
+  // Test 2: Gemini / Groq Tool Schemas Whitelist
   assert.ok(Array.isArray(GEMINI_TOOLS), 'GEMINI_TOOLS debe ser un array');
-  const toolNames = GEMINI_TOOLS.map(t => t.name);
+  const toolNames = GEMINI_TOOLS.map(t => t.name || t.function?.name);
   assert.ok(toolNames.includes('createTask'));
   assert.ok(toolNames.includes('listTasks'));
   assert.ok(toolNames.includes('createDocument'));
@@ -34,7 +34,7 @@ export async function runDriveGeminiTests() {
   assert.ok(toolNames.includes('deleteDocument'));
   assert.ok(toolNames.includes('searchDrive'));
   assert.ok(toolNames.includes('getActiveDeals'));
-  console.log('  ✓ Gemini Copilot: Whitelist de 10 schemas de herramientas validada');
+  console.log('  ✓ Groq / Gemini Copilot: Whitelist de 10 schemas de herramientas validada');
 
   // Test 3: Gemini Tool Execution: createTask
   const initialTaskCount = store.get('tasks', []).length;

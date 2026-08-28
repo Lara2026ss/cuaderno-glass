@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 5.0 — Backend Server con Firebase Admin, Gemini AI Proxy & Hardened Scraper
+ * Cuaderno Glass Pro 6.0 — Backend Server con Firebase Admin, Groq AI Proxy & Hardened Scraper
  */
 
 import express from 'express';
@@ -95,7 +95,8 @@ async function verifyAuthToken(req, res, next) {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '5.0.0',
+    version: '6.0.0',
+    aiEngine: 'Groq Llama 3.3 70B',
     firebaseAdmin: firebaseAdminInitialized,
     timestamp: new Date().toISOString()
   });
@@ -216,51 +217,72 @@ app.get('/api/price-tracker/check', async (req, res) => {
   }
 });
 
-// 4. Gemini AI Chat Proxy & Function Calling
+// 4. Groq AI Chat Proxy & Function Calling (OpenAI GPT OSS 120B / Llama)
 app.post('/api/ai/chat', async (req, res) => {
-  const { prompt, tools } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
+  const { prompt, systemInstruction, model = 'openai/gpt-oss-120b', tools } = req.body;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    return res.status(503).json({ error: 'GEMINI_API_KEY no configurada en el servidor' });
+    return res.status(503).json({ error: 'GROQ_API_KEY no configurada en variables de entorno del servidor' });
   }
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    const messages = [];
+
+    if (systemInstruction) {
+      messages.push({ role: 'system', content: systemInstruction });
+    }
+    messages.push({ role: 'user', content: prompt });
+
     const payload = {
-      contents: [{ parts: [{ text: prompt }] }]
+      model,
+      messages,
+      temperature: 0.5
     };
 
     if (tools && Array.isArray(tools) && tools.length > 0) {
-      payload.tools = [{ functionDeclarations: tools }];
+      payload.tools = tools;
+      payload.tool_choice = 'auto';
     }
 
-    const geminiRes = await fetch(url, {
+    const groqRes = await fetch(groqUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
       body: JSON.stringify(payload)
     });
 
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.json().catch(() => ({}));
-      return res.status(geminiRes.status).json({ error: 'Gemini API Error', details: errBody });
+    if (!groqRes.ok) {
+      const errBody = await groqRes.json().catch(() => ({}));
+      return res.status(groqRes.status).json({ error: 'Groq API Error', details: errBody });
     }
 
-    const data = await geminiRes.json();
-    const candidate = data.candidates?.[0]?.content?.parts?.[0];
+    const data = await groqRes.json();
+    const choice = data.choices?.[0];
+    const message = choice?.message;
 
-    if (candidate?.functionCall) {
+    if (message?.tool_calls && message.tool_calls.length > 0) {
+      const toolCall = message.tool_calls[0];
+      let fnArgs = {};
+      try {
+        fnArgs = JSON.parse(toolCall.function.arguments);
+      } catch {}
+
       return res.json({
         functionCall: {
-          name: candidate.functionCall.name,
-          args: candidate.functionCall.args || {}
-        }
+          name: toolCall.function.name,
+          args: fnArgs
+        },
+        reply: message.content || ''
       });
     }
 
-    res.json({ reply: candidate?.text || 'Sin respuesta de Gemini' });
+    res.json({ reply: message?.content || 'Sin respuesta de Groq AI' });
   } catch (err) {
-    res.status(500).json({ error: 'Error interno en Gemini Proxy', details: err.message });
+    res.status(500).json({ error: 'Error interno en Groq Proxy', details: err.message });
   }
 });
 
@@ -341,9 +363,9 @@ function startPriceMonitoringWorker() {
 if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   app.listen(PORT, () => {
     console.log(`\n======================================================`);
-    console.log(`🚀 CUADERNO GLASS PRO 5.0 SERVER`);
+    console.log(`🚀 CUADERNO GLASS PRO 6.0 SERVER`);
     console.log(`🌐 Servidor escuchando en: http://localhost:${PORT}`);
-    console.log(`🔒 Modo seguro activo • SSRF Protection • CORS configurado`);
+    console.log(`🔒 Modo seguro activo • SSRF Protection • Groq AI Copilot`);
     console.log(`======================================================\n`);
     startPriceMonitoringWorker();
   });

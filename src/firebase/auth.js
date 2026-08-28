@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Autenticación Robusta con Firebase & Google 4.5
+ * Cuaderno Glass Pro 6.0 — Autenticación Robusta con Firebase & Google
  * Manejo explícito de errores, diagnóstico visual, UX reactiva y fallback seguro.
  */
 
@@ -176,12 +176,20 @@ export class FirebaseAuthService {
         break;
 
       case AUTH_ERRORS.INVALID_API_KEY:
-        mapped.friendlyMessage = `La API Key de Firebase configurada para "${projectId}" no es válida.`;
+        mapped.friendlyMessage = `La API Key de Firebase para "${projectId}" no es válida. Configúrala en Ajustes o continúa en Modo Local.`;
         mapped.isConfigError = true;
+        mapped.actionText = 'Abrir Ajustes';
         break;
 
       default:
-        mapped.friendlyMessage = err.message || 'Error desconocido al autenticar con Google.';
+        if (code.includes('api-key') || (err.message && err.message.includes('api-key'))) {
+          mapped.friendlyMessage = `La API Key de Firebase no es válida. Puedes configurarla en Ajustes o continuar usando Cuaderno Glass en Modo Local sin problemas.`;
+          mapped.isConfigError = true;
+          mapped.actionText = 'Abrir Ajustes';
+        } else {
+          mapped.friendlyMessage = `Error de autenticación: ${err.message || code}`;
+        }
+        break;
     }
 
     return mapped;

@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Inicializador Maestro, Diagnóstico Visual & Error Boundary 4.5
+ * Cuaderno Glass Pro 6.0 — Inicializador Maestro, Diagnóstico Visual & Error Boundary
  */
 
 import { store } from './state.js';
@@ -16,7 +16,7 @@ import { discordAdapter } from '../integrations/discord.js';
 import { githubAdapter } from '../integrations/github.js';
 import { renderAdapter } from '../integrations/render.js';
 import { googleDriveAdapter } from '../integrations/google-drive.js';
-import { geminiProvider } from '../integrations/gemini.js';
+import { groqProvider, geminiProvider } from '../integrations/groq.js';
 import { tasksFeature } from '../features/tasks.js';
 import { notesFeature } from '../features/notes.js';
 import { documentsFeature } from '../features/documents.js';
@@ -72,7 +72,7 @@ export class AppBootstrap {
       modals.openDrivePicker(files, onFilePicked);
     });
 
-    logger.info('Bootstrap', 'Cuaderno Glass Pro 5.0 inicializado exitosamente');
+    logger.info('Bootstrap', 'Cuaderno Glass Pro 6.0 inicializado exitosamente');
   }
 
   _setupGlobalErrorBoundaries() {
@@ -204,10 +204,10 @@ export class AppBootstrap {
     });
 
     registry.register({
-      id: 'gemini',
-      name: 'Gemini AI Copilot',
-      icon: '✨',
-      description: 'Asistente de inteligencia artificial contextual',
+      id: 'groq',
+      name: 'Groq AI Copilot (Llama 3.3)',
+      icon: '⚡',
+      description: 'Asistente inteligente con Llama 3.3 70B y ejecución de herramientas',
       capabilities: ['ai'],
       healthCheck: async () => ({ ok: true })
     });
@@ -477,14 +477,14 @@ export class AppBootstrap {
 
       const botBubble = document.createElement('div');
       botBubble.className = 'chat-bubble bot';
-      botBubble.innerHTML = `<em>Gemini AI está pensando...</em>`;
+      botBubble.innerHTML = `<em>⚡ Groq AI (Llama 3.3) está procesando...</em>`;
       chatFlow.appendChild(botBubble);
       chatFlow.scrollTop = chatFlow.scrollHeight;
 
       try {
-        const reply = await geminiProvider.generateResponse(q);
+        const reply = await groqProvider.generateResponse(q);
         const safeReply = escapeHtml(reply).replace(/\n/g, '<br>');
-        botBubble.innerHTML = `✨ <strong>Gemini AI:</strong><br>${safeReply}`;
+        botBubble.innerHTML = `⚡ <strong>Groq AI (Llama 3.3):</strong><br>${safeReply}`;
         audio.soundNotification();
       } catch (err) {
         const safeErr = escapeHtml(err.message || 'Error desconocido');

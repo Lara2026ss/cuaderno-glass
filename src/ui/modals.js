@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 4.0 — Modal Manager
+ * Cuaderno Glass Pro 6.0 — Modal Manager
  */
 
 import { store } from '../app/state.js';
@@ -42,6 +42,8 @@ export class ModalManager {
     const fbConfig = settings.firebaseConfig || {};
 
     const fields = {
+      'setting-groq-apikey': settings.groqApiKey || '',
+      'setting-groq-model': settings.groqModel || 'openai/gpt-oss-120b',
       'setting-fb-apikey': fbConfig.apiKey || '',
       'setting-fb-authdomain': fbConfig.authDomain || '',
       'setting-fb-projectid': fbConfig.projectId || '',
@@ -51,7 +53,7 @@ export class ModalManager {
       'setting-discord-webhook': settings.discordWebhookUrl || '',
       'setting-github-repo': settings.githubRepo || 'Lara2026ss/cuaderno-glass',
       'setting-render-apikey': settings.renderApiKey || '',
-      'setting-gemini-apikey': settings.geminiApiKey || '',
+      'setting-gemini-apikey': settings.groqApiKey || settings.geminiApiKey || '',
       'setting-audio-volume': Math.round((settings.audioVolume ?? 0.5) * 100)
     };
 
@@ -62,10 +64,19 @@ export class ModalManager {
 
     const audioToggle = document.getElementById('setting-audio-toggle');
     if (audioToggle) audioToggle.checked = settings.audioEnabled ?? true;
+
+    // Mostrar el origen de la aplicación para configurar Google Cloud Console
+    const originEl = document.getElementById('current-origin-val');
+    if (originEl && typeof window !== 'undefined') {
+      originEl.textContent = window.location.origin || 'https://cuaderno-glass.onrender.com';
+    }
   }
 
   saveSettingsFromForm() {
     const getVal = (id) => document.getElementById(id)?.value.trim() || '';
+
+    const groqKey = getVal('setting-groq-apikey');
+    const groqModel = getVal('setting-groq-model') || 'openai/gpt-oss-120b';
 
     const apiKey = getVal('setting-fb-apikey');
     const authDomain = getVal('setting-fb-authdomain');
@@ -78,12 +89,14 @@ export class ModalManager {
       firebaseConfig = { apiKey, authDomain, projectId, storageBucket, appId };
     }
 
+    store.set('settings.groqApiKey', groqKey);
+    store.set('settings.groqModel', groqModel);
+    store.set('settings.geminiApiKey', groqKey);
     store.set('settings.firebaseConfig', firebaseConfig);
     store.set('settings.googleClientId', getVal('setting-google-clientid'));
     store.set('settings.discordWebhookUrl', getVal('setting-discord-webhook'));
     store.set('settings.githubRepo', getVal('setting-github-repo') || 'Lara2026ss/cuaderno-glass');
     store.set('settings.renderApiKey', getVal('setting-render-apikey'));
-    store.set('settings.geminiApiKey', getVal('setting-gemini-apikey'));
 
     const vol = parseInt(document.getElementById('setting-audio-volume')?.value || '50', 10) / 100;
     audio.setVolume(vol);
@@ -114,103 +127,110 @@ export class ModalManager {
           <li>📑 <strong>${counts.docsCount}</strong> Documentos</li>
           <li>🎁 <strong>${counts.trackersCount}</strong> Productos Monitoreados</li>
         </ul>
+        <div style="background: rgba(99,102,241,0.1); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; color: var(--text-muted);">
+          ℹ️ Tus datos locales se conservarán intactos y se sincronizarán de forma bidireccional.
+        </div>
       `;
+      this.open('modal-migration');
     }
-    this.open('modal-migration');
   }
 
   async executeMigration() {
+    this.close();
+    toast.info('Iniciando migración de datos a la nube...');
     try {
-      await synchronizer.migrateLocalToCloud();
-      this.close();
-      toast.success('¡Datos migrados exitosamente a Firebase Firestore!');
-    } catch (e) {
-      toast.error('Error durante la migración: ' + e.message);
+      const result = await synchronizer.migrateLocalDataToCloud();
+      if (result.migrated) {
+        toast.success('¡Datos locales migrados con éxito a Cloud Firestore!');
+        audio.soundSuccess();
+      } else {
+        toast.info('No había datos pendientes de migración');
+      }
+    } catch (err) {
+      toast.error('Error durante la migración: ' + err.message);
+      audio.soundError();
     }
   }
 
   openPriceHistory(tracker) {
-    const modal = document.getElementById('modal-price-history');
     const title = document.getElementById('price-history-title');
     const content = document.getElementById('price-history-content');
 
-    if (title) title.textContent = `Historial: ${tracker.productName}`;
+    if (title) title.textContent = `📈 Historial: ${tracker.productName}`;
     if (content) {
       const history = tracker.priceHistory || [];
       if (history.length === 0) {
-        content.innerHTML = `<p style="text-align:center; padding:20px; color:var(--text-soft);">Sin datos históricos suficientes.</p>`;
+        content.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No hay registros históricos suficientes todavía.</p>`;
       } else {
-        const prices = history.map(h => h.price);
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
+        const rows = history.map(h => `
+          <div style="display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--glass-border); font-size:0.85rem;">
+            <span style="color:var(--text-muted);">${formatDate(h.date)}</span>
+            <strong style="font-family:var(--font-mono); color:${h.price <= tracker.targetPrice ? 'var(--accent-emerald)' : 'var(--text-main)'};">$${h.price.toFixed(2)}</strong>
+          </div>
+        `).join('');
 
         content.innerHTML = `
-          <div style="display:flex; justify-content:space-around; background:rgba(255,255,255,0.03); padding:12px; border-radius:var(--radius-md); margin-bottom:14px;">
-            <div style="text-align:center;"><span style="font-size:0.75rem; color:var(--text-soft);">Mínimo</span><br><strong>$${min}</strong></div>
-            <div style="text-align:center;"><span style="font-size:0.75rem; color:var(--text-soft);">Actual</span><br><strong style="color:var(--accent-emerald);">$${tracker.currentPrice}</strong></div>
-            <div style="text-align:center;"><span style="font-size:0.75rem; color:var(--text-soft);">Máximo</span><br><strong>$${max}</strong></div>
-          </div>
-          <div style="max-height: 220px; overflow-y: auto;">
-            ${history.map(h => `
-              <div style="display:flex; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--glass-border); font-size:0.85rem;">
-                <span style="color:var(--text-muted);">${formatDate(h.timestamp)}</span>
-                <span style="font-family:var(--font-mono); font-weight:600;">$${h.price}</span>
-              </div>
-            `).reverse().join('')}
+          <div style="background:rgba(0,0,0,0.2); border-radius:var(--radius-md); padding:10px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.8rem; color:var(--text-soft);">
+              <span>Tienda: <strong>${tracker.store}</strong></span>
+              <span>Precio Meta: <strong>$${tracker.targetPrice.toFixed(2)}</strong></span>
+            </div>
+            <div style="max-height:220px; overflow-y:auto;">${rows}</div>
           </div>
         `;
       }
+      this.open('modal-price-history');
     }
-    this.open('modal-price-history');
   }
 
-  openDrivePicker(files = [], onFilePicked = null) {
-    let modal = document.getElementById('modal-drive-picker');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.className = 'modal-backdrop';
-      modal.id = 'modal-drive-picker';
-      document.body.appendChild(modal);
+  openDrivePicker(files, onFilePicked) {
+    let pickerModal = document.getElementById('modal-drive-picker');
+    if (!pickerModal) {
+      pickerModal = document.createElement('div');
+      pickerModal.className = 'modal-backdrop';
+      pickerModal.id = 'modal-drive-picker';
+      pickerModal.innerHTML = `
+        <div class="modal-card">
+          <div class="card-head">
+            <div class="card-title">☁️ Seleccionar Archivo de Google Drive</div>
+            <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
+          </div>
+          <div id="drive-picker-list" style="margin-top:14px; max-height:280px; overflow-y:auto;"></div>
+        </div>
+      `;
+      document.body.appendChild(pickerModal);
+
+      pickerModal.querySelector('.btn-close-modal').addEventListener('click', () => {
+        pickerModal.classList.remove('open');
+      });
+      pickerModal.addEventListener('click', (e) => {
+        if (e.target === pickerModal) pickerModal.classList.remove('open');
+      });
     }
 
-    modal.innerHTML = `
-      <div class="modal-card">
-        <div class="card-head">
-          <div class="card-title">☁️ Explorar Google Drive</div>
-          <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
-        </div>
-        <div style="max-height: 320px; overflow-y: auto; margin: 12px 0;">
-          ${files.length === 0 ? '<p style="text-align:center; padding:20px; color:var(--text-soft);">No se encontraron archivos compatibles en Google Drive.</p>' :
-            files.map(f => `
-              <div class="task-row drive-file-item" style="cursor:pointer;" data-id="${f.id}" data-name="${escapeHtml(f.name)}" data-mime="${f.mimeType}">
-                <span style="font-size:1.2rem;">${f.mimeType.includes('document') ? '📄' : '📑'}</span>
-                <div class="task-details">
-                  <div class="task-text">${escapeHtml(f.name)}</div>
-                  <div class="task-sub">ID: ${f.id}</div>
-                </div>
-                <button class="btn btn-primary btn-sm">Importar</button>
-              </div>
-            `).join('')
-          }
-        </div>
-        <div style="display:flex; justify-content:flex-end;">
-          <button class="btn btn-glass btn-sm btn-close-modal">Cerrar</button>
-        </div>
-      </div>
-    `;
+    const listContainer = pickerModal.querySelector('#drive-picker-list');
+    if (listContainer) {
+      if (!files || files.length === 0) {
+        listContainer.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">No se encontraron archivos en Google Drive.</p>`;
+      } else {
+        listContainer.innerHTML = files.map(f => `
+          <div class="drive-file-item" data-id="${f.id}" data-name="${escapeHtml(f.name)}" style="padding:10px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <span>📄 ${escapeHtml(f.name)}</span>
+            <button class="btn btn-primary btn-sm">Importar</button>
+          </div>
+        `).join('');
 
-    modal.querySelectorAll('.btn-close-modal').forEach(b => b.addEventListener('click', () => this.close()));
-    modal.querySelectorAll('.drive-file-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const id = item.dataset.id;
-        const name = item.dataset.name;
-        const mimeType = item.dataset.mime;
-        this.close();
-        if (onFilePicked) onFilePicked({ id, name, mimeType });
-      });
-    });
+        listContainer.querySelectorAll('.drive-file-item').forEach(item => {
+          item.addEventListener('click', () => {
+            pickerModal.classList.remove('open');
+            if (onFilePicked) onFilePicked(item.dataset.id, item.dataset.name);
+          });
+        });
+      }
+    }
 
-    this.open('modal-drive-picker');
+    pickerModal.classList.add('open');
+    this.activeModal = pickerModal;
   }
 }
 
