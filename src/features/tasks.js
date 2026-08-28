@@ -3,6 +3,7 @@
  */
 
 import { store } from '../app/state.js';
+import { events } from '../app/events.js';
 import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
 import { escapeHtml } from '../ui/components.js';
@@ -30,6 +31,11 @@ export class TasksFeature {
         this.render();
       });
     });
+
+    // Escuchadores reactivos de sincronización y estado
+    events.on('firestore:tasks:synced', () => this.render());
+    events.on('state:tasks', () => this.render());
+    events.on('tasks:updated', () => this.render());
 
     this.render();
   }
@@ -70,11 +76,13 @@ export class TasksFeature {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    task.done = !task.done;
+    const newDone = !(task.done || task.completed);
+    task.done = newDone;
+    task.completed = newDone;
     store.set('tasks', tasks);
     firestoreRepo.saveItem('tasks', task).catch(() => {});
 
-    if (task.done) {
+    if (newDone) {
       audio.soundSuccess();
       if (typeof confetti === 'function') confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
       discordAdapter.sendTaskCompleted(task).catch(() => {});
@@ -126,15 +134,16 @@ export class TasksFeature {
     };
 
     list.forEach(t => {
+      const isDone = Boolean(t.done || t.completed);
       const row = document.createElement('div');
-      row.className = `task-row ${t.done ? 'done' : ''}`;
+      row.className = `task-row ${isDone ? 'done' : ''}`;
       row.innerHTML = `
-        <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} aria-label="Completar tarea">
+        <input type="checkbox" class="task-check" ${isDone ? 'checked' : ''} aria-label="Completar tarea">
         <div class="task-details">
           <div class="task-text">${escapeHtml(t.text)}</div>
           <div class="task-sub">
-            <span class="badge-tag" style="${prioStyles[t.priority] || ''}">● ${t.priority.toUpperCase()}</span>
-            <span>🏷️ ${escapeHtml(t.category)}</span>
+            <span class="badge-tag" style="${prioStyles[t.priority] || ''}">● ${String(t.priority || 'media').toUpperCase()}</span>
+            <span>🏷️ ${escapeHtml(t.category || 'Trabajo')}</span>
             <span>📅 ${escapeHtml(t.date || 'Hoy')}</span>
           </div>
         </div>
@@ -152,8 +161,8 @@ export class TasksFeature {
 
   updateMetrics() {
     const all = store.get('tasks', []);
-    const pending = all.filter(t => !t.done).length;
-    const completed = all.filter(t => t.done).length;
+    const pending = all.filter(t => !t.done && !t.completed).length;
+    const completed = all.filter(t => t.done || t.completed).length;
 
     const elPending = document.getElementById('stat-pending-tasks');
     const elCompleted = document.getElementById('stat-completed-tasks');

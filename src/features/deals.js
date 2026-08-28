@@ -3,6 +3,7 @@
  */
 
 import { store } from '../app/state.js';
+import { events } from '../app/events.js';
 import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
 import { escapeHtml, sanitizeUrl, formatDate } from '../ui/components.js';
@@ -40,6 +41,14 @@ export class DealsFeature {
     if (btnRefreshAll) {
       btnRefreshAll.addEventListener('click', () => this.refreshAllPrices());
     }
+
+    // Escuchadores reactivos de sincronización y estado
+    events.on('firestore:priceTrackers:synced', () => this.render());
+    events.on('state:priceTrackers', () => this.render());
+    events.on('tracker:created', () => this.render());
+    events.on('tracker:updated', () => this.render());
+    events.on('tracker:deleted', () => this.render());
+    events.on('tracker:alert', () => this.render());
 
     this.render();
   }
@@ -135,66 +144,74 @@ export class DealsFeature {
       return;
     }
 
+    let previewCount = 0;
     list.forEach(item => {
-      const storeObj = Object.values(STORES).find(s => s.name === item.store) || STORES.GENERIC;
-      const safeUrl = sanitizeUrl(item.url);
-
-      const statusBadges = {
-        TARGET_REACHED: '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">🔥 ¡Meta Alcanzada!</span>',
-        PRICE_DROP: '<span class="badge-tag" style="background:rgba(6,182,212,0.22); color:var(--accent-cyan);">⚡ Bajó de Precio</span>',
-        DISCOUNT: '<span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">🏷️ En Oferta</span>',
-        NORMAL: '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">⏳ Normal</span>'
-      };
-
-      const card = document.createElement('div');
-      card.className = 'tracker-item';
-      card.innerHTML = `
-        <div class="tracker-head">
-          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-            <span style="font-size:1.15rem; flex-shrink:0;">${storeObj.icon}</span>
-            <div style="min-width:0;">
-              <div class="tracker-title">${escapeHtml(item.productName)}</div>
-              <div style="font-size:0.7rem; color:var(--text-soft);">${escapeHtml(item.store)} · Verificado ${formatDate(item.lastChecked)}</div>
-            </div>
-          </div>
-          <div>${statusBadges[item.status] || ''}</div>
-        </div>
-
-        <div class="tracker-prices">
-          <span class="tracker-current-price">$${item.currentPrice}</span>
-          ${item.normalPrice > item.currentPrice ? `<span class="tracker-normal-price">$${item.normalPrice}</span>` : ''}
-          ${item.discountPercent > 0 ? `<span class="discount-badge">-${item.discountPercent}% Ahorro ($${item.savings})</span>` : ''}
-          ${item.targetPrice > 0 ? `<span class="tracker-target-price">🎯 Meta: $${item.targetPrice}</span>` : ''}
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:8px; margin-top:2px; flex-wrap:wrap; gap:6px;">
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-glass btn-sm btn-history" title="Ver historial de precios">📈 Historial</button>
-            <button class="btn btn-glass btn-sm btn-check-now" title="Verificar precio ahora">🔄 Chequear</button>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Ir a Tienda ↗</a>
-            <button class="btn btn-danger btn-sm btn-delete-tracker" title="Eliminar">🗑️</button>
-          </div>
-        </div>
-      `;
-
-      card.querySelector('.btn-history').addEventListener('click', () => modals.openPriceHistory(item));
-      card.querySelector('.btn-check-now').addEventListener('click', async () => {
-        toast.info('Verificando precio...');
-        await priceTracker.checkPrice(item.id);
-        toast.success('Precio actualizado');
-        this.render();
-      });
-      card.querySelector('.btn-delete-tracker').addEventListener('click', () => this.deleteTracker(item.id));
-
-      if (this.fullListContainer) this.fullListContainer.appendChild(card.cloneNode(true));
-      if (this.previewContainer && this.previewContainer.children.length < 3) {
-        this.previewContainer.appendChild(card);
+      if (this.fullListContainer) {
+        this.fullListContainer.appendChild(this._createTrackerCard(item));
+      }
+      if (this.previewContainer && previewCount < 3) {
+        this.previewContainer.appendChild(this._createTrackerCard(item));
+        previewCount++;
       }
     });
 
     this.updateMetrics();
+  }
+
+  _createTrackerCard(item) {
+    const storeObj = Object.values(STORES).find(s => s.name === item.store) || STORES.GENERIC;
+    const safeUrl = sanitizeUrl(item.url);
+
+    const statusBadges = {
+      TARGET_REACHED: '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">🔥 ¡Meta Alcanzada!</span>',
+      PRICE_DROP: '<span class="badge-tag" style="background:rgba(6,182,212,0.22); color:var(--accent-cyan);">⚡ Bajó de Precio</span>',
+      DISCOUNT: '<span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">🏷️ En Oferta</span>',
+      NORMAL: '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">⏳ Normal</span>'
+    };
+
+    const card = document.createElement('div');
+    card.className = 'tracker-item';
+    card.innerHTML = `
+      <div class="tracker-head">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+          <span style="font-size:1.15rem; flex-shrink:0;">${storeObj.icon}</span>
+          <div style="min-width:0;">
+            <div class="tracker-title">${escapeHtml(item.productName)}</div>
+            <div style="font-size:0.7rem; color:var(--text-soft);">${escapeHtml(item.store)} · Verificado ${formatDate(item.lastChecked)}</div>
+          </div>
+        </div>
+        <div>${statusBadges[item.status] || ''}</div>
+      </div>
+
+      <div class="tracker-prices">
+        <span class="tracker-current-price">$${item.currentPrice}</span>
+        ${item.normalPrice > item.currentPrice ? `<span class="tracker-normal-price">$${item.normalPrice}</span>` : ''}
+        ${item.discountPercent > 0 ? `<span class="discount-badge">-${item.discountPercent}% Ahorro ($${item.savings})</span>` : ''}
+        ${item.targetPrice > 0 ? `<span class="tracker-target-price">🎯 Meta: $${item.targetPrice}</span>` : ''}
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:8px; margin-top:2px; flex-wrap:wrap; gap:6px;">
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-glass btn-sm btn-history" title="Ver historial de precios">📈 Historial</button>
+          <button class="btn btn-glass btn-sm btn-check-now" title="Verificar precio ahora">🔄 Chequear</button>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Ir a Tienda ↗</a>
+          <button class="btn btn-danger btn-sm btn-delete-tracker" title="Eliminar">🗑️</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.btn-history').addEventListener('click', () => modals.openPriceHistory(item));
+    card.querySelector('.btn-check-now').addEventListener('click', async () => {
+      toast.info('Verificando precio...');
+      await priceTracker.checkPrice(item.id);
+      toast.success('Precio actualizado');
+      this.render();
+    });
+    card.querySelector('.btn-delete-tracker').addEventListener('click', () => this.deleteTracker(item.id));
+
+    return card;
   }
 
   updateMetrics() {
