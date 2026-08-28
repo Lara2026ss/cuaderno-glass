@@ -1,0 +1,40 @@
+name: Cuaderno Glass CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-build:
+    name: Test, Security Scan & Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Secret Scanning & Security Audit
+        run: node tests/security-scan.test.js
+
+      - name: Run Master Test Suite (7 Suites)
+        run: node tests/run-all.js
+
+      - name: Run HTML Structure Audit
+        run: node tests/html-audit.test.js
+
+      - name: Build Production Distribution
+        run: node build.js
+
+      - name: Verify Build Artifacts
+        run: test -f dist/cuaderno.html && echo "✅ Build Artifact Verified"
