@@ -1,465 +1,518 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cuaderno Glass Pro 4.0 — Suite Personal & Cloud Hub</title>
+  <title>Cuaderno Glass Pro 6.0 — Personal Productivity Suite & Cloud Hub</title>
   
-  <!-- Tipografías de Alta Fidelidad -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Lara2026ss/cuaderno-glass/main/favicon.png">
+
+  <!-- Fuentes de alto rendimiento -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
   <!-- Estilos Modulares -->
   <link rel="stylesheet" href="src/styles/glass.css">
   <link rel="stylesheet" href="src/styles/components.css">
   <link rel="stylesheet" href="src/styles/responsive.css">
 
-  <!-- Librerías Externas: Confetti, Firebase SDK y Google Identity -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase v9 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Google Identity Services (GIS) & Drive Picker -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-
-  <!-- Luces ambientales de fondo -->
-  <div class="ambient-orb orb-1"></div>
-  <div class="ambient-orb orb-2"></div>
-  <div class="ambient-orb orb-3"></div>
-
-  <!-- Botón Menú Móvil -->
-  <button class="mobile-menu-btn" id="mobile-btn" aria-label="Abrir Menú">☰</button>
   <div class="mobile-overlay" id="mobile-overlay"></div>
 
   <div class="app-shell">
-    
-    <!-- =================== SIDEBAR =================== -->
+    <!-- BARRA LATERAL (SIDEBAR) -->
     <aside class="sidebar" id="sidebar-nav">
       <div class="brand">
-        <div class="brand-logo">✨</div>
-        <div>
-          <div class="brand-title">Cuaderno</div>
-          <span class="brand-tag">Glass Pro 4.0</span>
+        <div class="brand-icon">📔</div>
+        <div class="brand-text">
+          <div class="brand-title">CUADERNO</div>
+          <div class="brand-sub">GLASS PRO 6.0</div>
         </div>
       </div>
 
-      <nav class="nav-list" id="nav-btns" aria-label="Navegación principal">
+      <!-- Perfil de Usuario & Google Auth -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" id="user-avatar-img">👤</div>
+        <div class="user-info">
+          <div class="user-name" id="user-display-name">Modo Local / Demo</div>
+          <div class="user-status" id="user-display-email">Sin conexión cloud</div>
+        </div>
+      </div>
+
+      <div style="padding: 0 12px; margin-bottom: 12px;">
+        <button class="btn btn-google btn-full" id="btn-google-auth">
+          <span style="font-size: 1.1rem;">🇬</span>
+          <span id="auth-btn-text">Iniciar Sesión con Google</span>
+        </button>
+      </div>
+
+      <!-- Navegación Principal -->
+      <div class="nav-section-title">NAVEGACIÓN</div>
+      <nav class="nav-list" id="nav-btns">
         <button class="nav-btn active" data-tab="dashboard">
-          <span>📊</span> Dashboard
-          <span class="nav-badge" id="badge-tasks">0</span>
+          <span class="nav-icon">📊</span>
+          <span>Panel de Control</span>
         </button>
         <button class="nav-btn" data-tab="deals">
-          <span>🔔</span> Alertas & Descuentos
+          <span class="nav-icon">🎁</span>
+          <span>Rastreador Ofertas</span>
+          <span class="badge-count" id="badge-deals">4.5</span>
         </button>
         <button class="nav-btn" data-tab="documents">
-          <span>📑</span> Documentos & Drive
-          <span class="nav-badge" id="badge-docs">0</span>
+          <span class="nav-icon">📑</span>
+          <span>Documentos & Drive</span>
+          <span class="badge-count" id="badge-docs">0</span>
         </button>
         <button class="nav-btn" data-tab="gemini">
-          <span>✨</span> Gemini AI Copilot
+          <span class="nav-icon">✨</span>
+          <span>Gemini AI Copilot</span>
         </button>
         <button class="nav-btn" data-tab="connectors">
-          <span>⚡</span> Apps & Webhooks
+          <span class="nav-icon">🔌</span>
+          <span>Conectores Hub</span>
         </button>
         <button class="nav-btn" data-tab="pomodoro">
-          <span>🎯</span> Modo Enfoque
+          <span class="nav-icon">⏱️</span>
+          <span>Pomodoro Focus</span>
         </button>
       </nav>
 
-      <!-- Tarjeta de Usuario Google / Firebase -->
-      <div class="user-profile-card">
-        <div class="user-profile-header">
-          <div class="user-avatar" id="user-avatar-img">👤</div>
-          <div class="user-info">
-            <div class="user-name" id="user-display-name">Invitado</div>
-            <div class="user-email" id="user-display-email">Modo Local</div>
-          </div>
-        </div>
-        <button class="btn btn-google btn-sm" id="btn-google-auth" style="width: 100%;">
-          <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:4px;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-          <span id="auth-btn-text">Iniciar Sesión con Google</span>
-        </button>
-        <button class="btn btn-glass btn-sm" id="btn-open-settings" style="width: 100%;">⚙️ Configuración</button>
+      <div class="nav-section-title" style="margin-top: auto;">CONFIGURACIÓN</div>
+      <div style="padding: 0 10px; display: flex; gap: 8px;">
+        <button class="btn btn-glass btn-sm" id="btn-open-settings" style="flex:1;">⚙️ Ajustes</button>
+        <button class="btn btn-glass btn-sm" id="btn-theme-toggle" title="Cambiar Tema">🌓</button>
       </div>
     </aside>
 
-    <!-- =================== CONTENIDO PRINCIPAL =================== -->
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
     <main>
-      
-      <!-- Topbar -->
-      <div class="top-bar">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="global-search" placeholder="Buscar en tareas, documentos, productos o notas..." aria-label="Búsqueda global">
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button class="btn btn-glass btn-sm" id="btn-theme-toggle">🌓 Tema</button>
-          <button class="btn btn-primary btn-sm" id="btn-quick-new">+ Nueva Entrada</button>
-        </div>
-      </div>
-
-      <!-- =================== TAB 1: DASHBOARD =================== -->
-      <section class="view-content active" id="tab-dashboard">
-        <div class="view-header">
-          <h1>Panel de Control</h1>
-          <p>Tus prioridades del día, métricas en tiempo real y sincronización activa.</p>
-        </div>
-
-        <div class="metric-row">
-          <div class="metric-box" style="--accent-theme: var(--primary);">
-            <div class="metric-num" id="stat-pending-tasks">0</div>
-            <div class="metric-lbl">Tareas Pendientes</div>
-          </div>
-          <div class="metric-box" style="--accent-theme: var(--accent-emerald);">
-            <div class="metric-num" id="stat-completed-tasks">0</div>
-            <div class="metric-lbl">Completadas</div>
-          </div>
-          <div class="metric-box" style="--accent-theme: var(--accent-cyan);">
-            <div class="metric-num" id="stat-docs-count">0</div>
-            <div class="metric-lbl">Documentos & Notas</div>
-          </div>
-          <div class="metric-box" style="--accent-theme: var(--accent-amber);">
-            <div class="metric-num" id="stat-active-alerts">0</div>
-            <div class="metric-lbl">Alertas de Precio</div>
+      <!-- TOP BAR -->
+      <header class="top-bar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="mobile-menu-btn" id="mobile-btn" aria-label="Abrir Menú">☰</button>
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="global-search" placeholder="Buscar tareas, notas, documentos o precios..." autocomplete="off">
           </div>
         </div>
 
-        <div class="grid-2">
-          <!-- Columna Izquierda: Tareas y Scratchpad -->
-          <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn btn-primary btn-sm" id="btn-quick-new">+ Nuevo Apunte</button>
+        </div>
+      </header>
+
+      <!-- VISTAS / TABS -->
+      <div class="content-body">
+        <!-- 1. DASHBOARD -->
+        <section id="tab-dashboard" class="tab-view active">
+          <div class="view-header">
+            <h1>Panel de Control</h1>
+            <p>Bienvenido a tu suite de productividad y centro de operaciones</p>
+          </div>
+
+          <!-- Fila de Métricas -->
+          <div class="metric-row">
+            <div class="metric-card">
+              <div class="metric-title">Tareas Pendientes</div>
+              <div class="metric-val" id="stat-pending-tasks">0</div>
+              <div class="metric-sub">● En curso</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Tareas Completadas</div>
+              <div class="metric-val" id="stat-completed-tasks" style="color:var(--accent-emerald);">0</div>
+              <div class="metric-sub">✨ Productividad</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Documentos Guardados</div>
+              <div class="metric-val" id="stat-docs-count">0</div>
+              <div class="metric-sub">☁️ Google Drive & Cloud</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-title">Alertas de Precios</div>
+              <div class="metric-val" id="stat-active-alerts" style="color:var(--accent-coral);">0</div>
+              <div class="metric-sub">🛒 Multi-Store 4.5</div>
+            </div>
+          </div>
+
+          <!-- Grid de Tareas & Notas Rápidas -->
+          <div class="grid-2">
+            <!-- TAREAS -->
             <div class="glass-card">
               <div class="card-head">
-                <div class="card-title">📌 Tareas & Metas Clave</div>
-                <div class="chips-bar" id="task-filter-chips">
+                <div class="card-title">
+                  <span>📌</span>
+                  <span>Tareas & Objetivos</span>
+                </div>
+                <div class="filter-chips" id="task-filter-chips">
                   <span class="chip active" data-cat="all">Todas</span>
-                  <span class="chip" data-cat="Trabajo">💼 Trabajo</span>
-                  <span class="chip" data-cat="Personal">🌿 Personal</span>
-                  <span class="chip" data-cat="Estudio">📚 Estudio</span>
-                  <span class="chip" data-cat="Ideas">💡 Ideas</span>
+                  <span class="chip" data-cat="Trabajo">Trabajo</span>
+                  <span class="chip" data-cat="Personal">Personal</span>
+                  <span class="chip" data-cat="Estudio">Estudio</span>
                 </div>
               </div>
 
-              <div id="tasks-container"></div>
-
-              <!-- Formulario Rediseñado FASE 14 -->
-              <form id="form-add-task" class="form-task-grid">
-                <input type="text" id="input-task-text" placeholder="¿Qué meta tienes hoy?" required>
+              <!-- Formulario Agregar Tarea -->
+              <form id="form-add-task" class="form-task-grid" style="display:grid; grid-template-columns: 1fr auto auto auto; gap: 8px; margin-bottom: 14px;">
+                <input type="text" id="input-task-text" placeholder="Nueva tarea..." required>
                 <select id="input-task-cat">
-                  <option value="Trabajo">💼 Trabajo</option>
-                  <option value="Personal">🌿 Personal</option>
-                  <option value="Estudio">📚 Estudio</option>
-                  <option value="Ideas">💡 Ideas</option>
+                  <option value="Trabajo">Trabajo</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Estudio">Estudio</option>
+                  <option value="Ideas">Ideas</option>
                 </select>
                 <select id="input-task-prio">
-                  <option value="media">⚡ Media</option>
-                  <option value="alta">🔥 Alta</option>
-                  <option value="baja">🌱 Baja</option>
+                  <option value="media">Media</option>
+                  <option value="alta">Alta 🔥</option>
+                  <option value="baja">Baja</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm">Añadir</button>
+                <button type="submit" class="btn btn-primary">Añadir</button>
               </form>
+
+              <!-- Lista de Tareas -->
+              <div class="task-list" id="tasks-container"></div>
             </div>
 
-            <!-- Scratchpad Rápido -->
+            <!-- NOTAS RÁPIDAS & SCRATCHPAD -->
             <div class="glass-card">
               <div class="card-head">
-                <div class="card-title">⚡ Bloc de Notas Rápido</div>
+                <div class="card-title">
+                  <span>📝</span>
+                  <span>Bloc de Notas Rápido</span>
+                </div>
                 <button class="btn btn-glass btn-sm" id="btn-clean-notes">✨ Estructurar con IA</button>
               </div>
-              <textarea id="scratchpad-area" placeholder="Captura ideas al vuelo, notas de reuniones o snippets..."></textarea>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span style="font-size: 0.75rem; color: var(--text-soft);" id="scratchpad-indicator">Sincronizado en la suite</span>
+
+              <textarea id="scratchpad-area" style="width:100%; height:130px; margin-bottom:10px; resize:vertical;" placeholder="Escribe ideas rápidas o recordatorios aquí..."></textarea>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.75rem; color:var(--text-soft);">Sincronización instantánea</span>
                 <button class="btn btn-primary btn-sm" id="btn-save-note">Guardar Nota</button>
               </div>
-              <div id="quick-notes-list" style="margin-top: 12px;"></div>
+
+              <div class="nav-section-title" style="margin-top:16px;">NOTAS RECIENTES</div>
+              <div id="quick-notes-list"></div>
             </div>
           </div>
 
-          <!-- Columna Derecha: Alertas & Pomodoro -->
-          <div>
-            <!-- Resumen de Alertas y Descuentos -->
-            <div class="glass-card">
-              <div class="card-head">
-                <div class="card-title" style="color: var(--accent-emerald);">🔔 Alertas de Ofertas</div>
-                <button class="btn btn-glass btn-sm" id="btn-goto-deals">Ver Todas</button>
+          <!-- RESUMEN DE DESCUENTOS Y OFERTAS EN DASHBOARD -->
+          <div class="glass-card" style="margin-top: 18px;">
+            <div class="card-head">
+              <div class="card-title">
+                <span>🎁</span>
+                <span>Rastreador de Ofertas & Descuentos</span>
               </div>
-              <div id="deals-preview"></div>
+              <button class="btn btn-glass btn-sm" id="btn-goto-deals">Ver Todas las Ofertas ↗</button>
             </div>
+            <div id="deals-preview" class="grid-3" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;"></div>
+          </div>
+        </section>
 
-            <!-- Pomodoro Focus -->
-            <div class="glass-card" style="text-align: center;">
-              <div class="card-title" style="justify-content: center; margin-bottom: 6px;">🎯 Bloque de Enfoque</div>
-              <div style="font-family: var(--font-mono); font-size: 3.2rem; font-weight: 800; color: #e0e7ff; margin: 8px 0;" id="dash-timer-val">25:00</div>
-              <div style="display: flex; justify-content: center; gap: 10px;">
-                <button class="btn btn-primary btn-sm" id="btn-dash-timer">Iniciar</button>
-                <button class="btn btn-glass btn-sm" id="btn-dash-reset">Reiniciar</button>
+        <!-- 2. DEALS & PRICE TRACKER -->
+        <section id="tab-deals" class="tab-view">
+          <div class="view-header">
+            <h1>Rastreador de Precios Multitienda 4.5</h1>
+            <p>Monitorea Amazon, Eneba, Steam y Mercado Libre con alertas de bajada de precio</p>
+          </div>
+
+          <!-- Formulario Agregar Tracker -->
+          <div class="glass-card" style="margin-bottom: 20px;">
+            <div class="card-head">
+              <div class="card-title">
+                <span>➕</span>
+                <span>Añadir Producto para Seguimiento</span>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- =================== TAB 2: ALERTAS & DESCUENTOS =================== -->
-      <section class="view-content" id="tab-deals">
-        <div class="view-header">
-          <h1>Rastreador de Precios & Descuentos</h1>
-          <p>Monitorea caídas de precio en tiempo real en Eneba, Amazon, Mercado Libre, Steam o cualquier tienda web.</p>
-        </div>
-
-        <!-- Formulario para Añadir Producto -->
-        <div class="glass-card" style="border-color: var(--primary-glow);">
-          <div class="card-head">
-            <div class="card-title">🛒 Añadir Producto a Monitorear</div>
-          </div>
-          <form id="form-add-tracker" style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Tienda</label>
-                <select id="input-tracker-store">
-                  <option value="Amazon">🛒 Amazon</option>
-                  <option value="Eneba">🎮 Eneba</option>
-                  <option value="Mercado Libre">📦 Mercado Libre</option>
-                  <option value="Steam">🕹️ Steam</option>
-                  <option value="Tienda Online">🌐 Otra Tienda</option>
+            <form id="form-add-tracker" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items:end;">
+              <div>
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Tienda</label>
+                <select id="input-tracker-store" style="width:100%;">
+                  <option value="Amazon">Amazon 🛒</option>
+                  <option value="Eneba">Eneba 🎮</option>
+                  <option value="Mercado Libre">Mercado Libre 📦</option>
+                  <option value="Steam">Steam 🕹️</option>
+                  <option value="Tienda Online">Otra Tienda 🌐</option>
                 </select>
               </div>
-              <div style="flex: 2; min-width: 200px;">
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Nombre del Producto</label>
-                <input type="text" id="input-tracker-name" placeholder="Ej. Cyberpunk 2077 Key / Monitor LG 27''" required>
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Enlace del Producto (URL)</label>
-              <input type="url" id="input-tracker-url" placeholder="https://www.eneba.com/..." required>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
               <div>
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Normal ($)</label>
-                <input type="number" step="0.01" id="input-tracker-normal" placeholder="Ej. 59.99">
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Nombre del Producto</label>
+                <input type="text" id="input-tracker-name" placeholder="Ej: PlayStation 5 Slim" required style="width:100%;">
               </div>
               <div>
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Actual ($)</label>
-                <input type="number" step="0.01" id="input-tracker-current" placeholder="Ej. 29.99">
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">URL del Producto</label>
+                <input type="url" id="input-tracker-url" placeholder="https://..." required style="width:100%;">
               </div>
               <div>
-                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Precio Meta ($)</label>
-                <input type="number" step="0.01" id="input-tracker-target" placeholder="Ej. 25.00">
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Precio Habitual ($)</label>
+                <input type="number" id="input-tracker-normal" step="0.01" placeholder="500.00" style="width:100%;">
               </div>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-              <button type="submit" class="btn btn-primary">🚀 Comenzar Seguimiento</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-head">
-            <div class="card-title">🎁 Productos en Monitoreo Activo</div>
-            <button class="btn btn-primary btn-sm" id="btn-refresh-deals">🔄 Actualizar Precios</button>
+              <div>
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Precio Actual ($)</label>
+                <input type="number" id="input-tracker-current" step="0.01" placeholder="420.00" style="width:100%;">
+              </div>
+              <div>
+                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Precio Objetivo / Alerta ($)</label>
+                <input type="number" id="input-tracker-target" step="0.01" placeholder="399.00" style="width:100%;">
+              </div>
+              <div>
+                <button type="submit" class="btn btn-primary btn-full">Monitorear</button>
+              </div>
+            </form>
           </div>
-          <div id="deals-full-list"></div>
-        </div>
-      </section>
 
-      <!-- =================== TAB 3: DOCUMENTOS & DRIVE =================== -->
-      <section class="view-content" id="tab-documents">
-        <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px;">
-          <div>
+          <!-- Controles de Lista -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div class="nav-section-title">PRODUCTOS EN MONITOREO ACTIVO</div>
+            <button class="btn btn-glass btn-sm" id="btn-refresh-deals">🔄 Verificar Todos</button>
+          </div>
+
+          <div id="deals-full-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;"></div>
+        </section>
+
+        <!-- 3. DOCUMENTS & GOOGLE DRIVE -->
+        <section id="tab-documents" class="tab-view">
+          <div class="view-header">
             <h1>Documentos & Google Drive Hub</h1>
-            <p>Gestor de apuntes, artículos enriquecidos y sincronización con tu Google Drive.</p>
+            <p>Editor de texto Markdown, exportación a Drive y sincronización en la nube</p>
           </div>
-          <button class="btn btn-primary" id="btn-new-doc-toggle">+ Redactar Documento</button>
-        </div>
 
-        <!-- Editor de Documento -->
-        <div class="glass-card" id="doc-editor-box" style="display: none; border-color: var(--primary);">
-          <div class="card-head">
-            <div class="card-title">✍️ Redactar Documento / Nota</div>
-            <button class="btn btn-glass btn-sm" id="btn-close-doc-editor">✕ Cerrar</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div class="filter-chips" id="doc-category-chips">
+              <span class="chip active" data-cat="all">Todos</span>
+              <span class="chip" data-cat="Trabajo">Trabajo</span>
+              <span class="chip" data-cat="Personal">Personal</span>
+              <span class="chip" data-cat="Estudio">Estudio</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-glass btn-sm" id="btn-import-drive">☁️ Explorar Google Drive</button>
+              <button class="btn btn-primary btn-sm" id="btn-new-doc-toggle">+ Crear Documento</button>
+            </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <input type="text" id="doc-title-input" placeholder="Título del documento..." style="font-size: 1.05rem; font-weight: 600;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <select id="doc-category-input" style="flex: 1; min-width: 130px;">
-                <option value="Trabajo">💼 Trabajo</option>
-                <option value="Personal">🌿 Personal</option>
-                <option value="Estudio">📚 Estudio</option>
-                <option value="Ideas">💡 Ideas</option>
+
+          <!-- EDITOR DE DOCUMENTO (OCULTO POR DEFECTO) -->
+          <div id="doc-editor-box" class="glass-card" style="display:none; margin-bottom:20px; border-color:var(--primary);">
+            <div class="card-head">
+              <div class="card-title">
+                <span>✏️</span>
+                <span>Editor de Documento</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <span id="doc-sync-status" style="font-size:0.75rem; color:var(--text-soft); align-self:center;"></span>
+                <button class="btn btn-glass btn-sm" id="btn-export-single-doc">📥 Descargar .md</button>
+                <button class="btn btn-glass btn-sm" id="btn-export-pdf">📄 Imprimir / PDF</button>
+                <button class="btn btn-glass btn-sm" id="btn-close-doc-editor">✕ Cerrar</button>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+              <input type="text" id="doc-title-input" placeholder="Título del documento..." style="font-size:1.1rem; font-weight:600;">
+              <select id="doc-category-input">
+                <option value="Trabajo">Trabajo</option>
+                <option value="Personal">Personal</option>
+                <option value="Estudio">Estudio</option>
+                <option value="Proyectos">Proyectos</option>
               </select>
-              <input type="text" id="doc-tags-input" placeholder="Etiquetas separadas por comas (ej. backend, render, api)" style="flex: 2; min-width: 170px;">
+              <input type="text" id="doc-tags-input" placeholder="Tags (separados por coma)">
             </div>
-            <textarea id="doc-body-input" rows="8" placeholder="Escribe el contenido en Markdown..."></textarea>
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <button class="btn btn-glass btn-sm" id="btn-export-single-doc">📄 Descargar .md</button>
-              <button class="btn btn-primary" id="btn-save-document">🚀 Guardar Documento</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filtros -->
-        <div class="chips-bar" id="doc-category-chips">
-          <span class="chip active" data-cat="all">Todos los Documentos</span>
-          <span class="chip" data-cat="Trabajo">💼 Trabajo</span>
-          <span class="chip" data-cat="Personal">🌿 Personal</span>
-          <span class="chip" data-cat="Estudio">📚 Estudio</span>
-          <span class="chip" data-cat="Ideas">💡 Ideas</span>
-        </div>
-
-        <div id="documents-container"></div>
-      </section>
-
-      <!-- =================== TAB 4: GEMINI AI COPILOT =================== -->
-      <section class="view-content" id="tab-gemini">
-        <div class="view-header">
-          <h1>Gemini AI Copilot</h1>
-          <p>Asistente inteligente con conocimiento contextual de tus tareas, notas, documentos y ofertas.</p>
-        </div>
-
-        <div class="glass-card" style="max-width: 920px; margin: 0 auto;">
-          <div class="chat-messages" id="gemini-chat-flow">
-            <div class="chat-bubble bot">
-              👋 ¡Hola! Soy tu asistente de IA en Cuaderno Glass. Conozco tus tareas, apuntes y alertas activas. ¿En qué te puedo ayudar hoy?
+            <textarea id="doc-body-input" style="width:100%; height:280px; font-family:var(--font-mono); font-size:0.9rem; line-height:1.6;" placeholder="# Escribe en formato Markdown..."></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+              <button class="btn btn-primary" id="btn-save-document">Guardar Documento</button>
             </div>
           </div>
 
-          <div style="display: flex; gap: 10px;">
-            <input type="text" id="gemini-user-input" placeholder="Escribe una consulta a Gemini AI..." style="flex: 1;">
-            <button class="btn btn-primary" id="btn-send-gemini">Enviar ✨</button>
-          </div>
-        </div>
-      </section>
+          <!-- GRID DE DOCUMENTOS -->
+          <div id="documents-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;"></div>
+        </section>
 
-      <!-- =================== TAB 5: APPS & DIAGNOSTICS =================== -->
-      <section class="view-content" id="tab-connectors">
-        <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h1>Centro de Integraciones & Diagnóstico</h1>
-            <p>Monitoreo en tiempo real de Firebase, Google Drive, GitHub, Discord, Render y Gemini.</p>
-          </div>
-          <button class="btn btn-primary btn-sm" id="btn-run-all-health">🩺 Ejecutar Health Check Global</button>
-        </div>
-
-        <div class="grid-2" id="connectors-cards-grid"></div>
-
-        <div class="glass-card" style="margin-top: 20px;">
-          <div class="card-head">
-            <div class="card-title">💾 Copia de Seguridad Completa</div>
-          </div>
-          <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 12px;">
-            Exporta todos tus datos locales y configuraciones en formato universal JSON.
-          </p>
-          <button class="btn btn-glass btn-sm" id="btn-export-full-backup">📥 Descargar Respaldo JSON</button>
-        </div>
-      </section>
-
-      <!-- =================== TAB 6: MODO ENFOQUE =================== -->
-      <section class="view-content" id="tab-pomodoro">
-        <div class="view-header">
-          <h1>Modo Enfoque Pomodoro</h1>
-          <p>Estructura tus bloques de concentración sin interrupciones con sintetizador acústico.</p>
-        </div>
-
-        <div class="glass-card" style="max-width: 600px; margin: 0 auto; text-align: center;">
-          <div class="chips-bar" style="justify-content: center; margin-bottom: 16px;">
-            <span class="chip active" id="pomo-w">💼 Trabajo (25m)</span>
-            <span class="chip" id="pomo-s">☕ Descanso (5m)</span>
-            <span class="chip" id="pomo-l">🌿 Pausa Larga (15m)</span>
+        <!-- 4. GEMINI AI COPILOT -->
+        <section id="tab-gemini" class="tab-view">
+          <div class="view-header">
+            <h1>Gemini AI Copilot</h1>
+            <p>Asistente contextual inteligente potenciado por Google Gemini 1.5 Flash</p>
           </div>
 
-          <div style="font-family: var(--font-mono); font-size: 4.8rem; font-weight: 800; color: #e0e7ff; margin: 16px 0; text-shadow: 0 0 30px var(--primary-glow);" id="full-timer-val">25:00</div>
+          <div class="glass-card" style="display:flex; flex-direction:column; height: calc(100vh - 220px); min-height:500px;">
+            <div class="card-head">
+              <div class="card-title">
+                <span>✨</span>
+                <span>Conversación & Asistente Pro</span>
+              </div>
+              <span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">Gemini 1.5 Flash</span>
+            </div>
 
-          <div style="display: flex; justify-content: center; gap: 12px;">
-            <button class="btn btn-primary" id="btn-timer-toggle" style="padding: 10px 28px; font-size: 0.95rem;">▶ Iniciar</button>
-            <button class="btn btn-glass" id="btn-timer-reset" style="padding: 10px 20px;">↺ Reiniciar</button>
+            <!-- Flujo de Chat -->
+            <div id="gemini-chat-flow" class="chat-flow" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:12px;">
+              <div class="chat-bubble bot">
+                ¡Hola! Soy tu asistente <strong>Gemini AI</strong>. Puedo ayudarte a resumir tus documentos, priorizar tareas pendientes o redactar planes de acción en formato Glass. ¿En qué te ayudo hoy?
+              </div>
+            </div>
+
+            <!-- Entrada de Chat -->
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <input type="text" id="gemini-user-input" placeholder="Pregunta a Gemini AI o pídele generar contenido..." style="flex:1;">
+              <button class="btn btn-primary" id="btn-send-gemini">Enviar ✨</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
+        <!-- 5. CONECTORES & SERVICIOS -->
+        <section id="tab-connectors" class="tab-view">
+          <div class="view-header">
+            <h1>Conectores Hub & Diagnóstico</h1>
+            <p>Estado en tiempo real de Firebase, Google Drive, Discord, Render, GitHub y Gemini</p>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+            <button class="btn btn-primary btn-sm" id="btn-run-all-health">⚡ Diagnóstico Completo</button>
+          </div>
+
+          <div id="connectors-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;"></div>
+        </section>
+
+        <!-- 6. POMODORO FOCUS -->
+        <section id="tab-pomodoro" class="tab-view">
+          <div class="view-header">
+            <h1>Pomodoro Focus Timer</h1>
+            <p>Maximiza tu concentración con bloques de trabajo de 25 minutos y audio procedural</p>
+          </div>
+
+          <div class="glass-card" style="text-align:center; max-width:540px; margin: 0 auto; padding:40px 20px;">
+            <div class="filter-chips" style="justify-content:center; margin-bottom:24px;">
+              <span class="chip active" id="pomo-mode-work">Trabajo (25m)</span>
+              <span class="chip" id="pomo-mode-short">Descanso Corto (5m)</span>
+              <span class="chip" id="pomo-mode-long">Descanso Largo (15m)</span>
+            </div>
+
+            <div id="full-timer-val" style="font-family:var(--font-mono); font-size:4.8rem; font-weight:800; letter-spacing:-2px; margin-bottom:24px; color:var(--text-main); text-shadow: 0 0 40px rgba(99,102,241,0.4);">25:00</div>
+
+            <div style="display:flex; justify-content:center; gap:12px;">
+              <button class="btn btn-primary" id="btn-pomo-toggle" style="padding:12px 32px; font-size:1.1rem;">Iniciar Focus ▶</button>
+              <button class="btn btn-glass" id="btn-pomo-reset" style="padding:12px 20px;">Reiniciar 🔄</button>
+            </div>
+
+            <div style="margin-top:30px; font-size:0.85rem; color:var(--text-muted);">
+              Sesiones completadas hoy: <strong id="pomo-completed-count" style="color:var(--accent-emerald);">0</strong>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
-  <!-- =================== MODALES =================== -->
-
-  <!-- Modal 1: Configuración General & API Keys -->
+  <!-- MODAL: AJUSTES / CONFIGURACIÓN -->
   <div class="modal-backdrop" id="modal-settings">
     <div class="modal-card">
       <div class="card-head">
         <div class="card-title">⚙️ Configuración de la Suite</div>
-        <button class="btn btn-glass btn-sm btn-close-modal" aria-label="Cerrar">✕</button>
+        <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
       </div>
 
-      <form id="form-settings" style="display: flex; flex-direction: column; gap: 12px;">
-        <h4 style="font-size: 0.9rem; color: var(--primary-light); margin-top: 4px;">🔥 Firebase Configuration (Google Auth / Firestore)</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
-          <input type="text" id="setting-fb-apikey" placeholder="apiKey (opcional si usa backend)">
-          <input type="text" id="setting-fb-authdomain" placeholder="authDomain">
-          <input type="text" id="setting-fb-projectid" placeholder="projectId">
-          <input type="text" id="setting-fb-storagebucket" placeholder="storageBucket">
-        </div>
-        <input type="text" id="setting-fb-appid" placeholder="appId">
-
-        <h4 style="font-size: 0.9rem; color: var(--accent-render); margin-top: 6px;">⚡ Integraciones & Tokens</h4>
-        <input type="text" id="setting-discord-webhook" placeholder="Discord Webhook URL (https://discord.com/api/webhooks/...)">
-        <input type="text" id="setting-github-repo" placeholder="GitHub Repo (ej. Lara2026ss/cuaderno-glass)">
-        <input type="password" id="setting-render-apikey" placeholder="Render API Key (opcional para monitoreo)">
-        <input type="password" id="setting-gemini-apikey" placeholder="Gemini API Key (opcional si corre en backend)">
-
-        <h4 style="font-size: 0.9rem; color: var(--accent-cyan); margin-top: 6px;">🔊 Sonido y Notificaciones</h4>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <label style="font-size: 0.85rem;">Efectos de Sonido (Web Audio API)</label>
-          <input type="checkbox" id="setting-audio-toggle" checked style="width: 18px; height: 18px;">
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <label style="font-size: 0.8rem; color: var(--text-muted);">Volumen:</label>
-          <input type="range" id="setting-audio-volume" min="0" max="100" value="50" style="flex: 1;">
+      <form id="form-settings" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
+        <div class="nav-section-title">FIREBASE CLOUD FIRESTORE & AUTH</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted);">API Key</label>
+            <input type="password" id="setting-fb-apikey" placeholder="AIzaSy...">
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted);">Auth Domain</label>
+            <input type="text" id="setting-fb-authdomain" placeholder="proyecto.firebaseapp.com">
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted);">Project ID</label>
+            <input type="text" id="setting-fb-projectid" placeholder="alero-company-works">
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted);">App ID</label>
+            <input type="text" id="setting-fb-appid" placeholder="1:12345:web:abc">
+          </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
-          <button type="button" class="btn btn-glass btn-sm btn-close-modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary btn-sm">Guardar Cambios</button>
+        <div class="nav-section-title">INTEGRACIONES EXTERNAS</div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">Google OAuth Client ID (Google Drive Hub)</label>
+          <input type="text" id="setting-google-clientid" placeholder="16044531269-...apps.googleusercontent.com" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">Discord Webhook URL</label>
+          <input type="url" id="setting-discord-webhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">Gemini AI Studio API Key</label>
+          <input type="password" id="setting-gemini-apikey" placeholder="AIzaSy..." style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">Render API Key</label>
+          <input type="password" id="setting-render-apikey" placeholder="rnd_..." style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">GitHub Repo</label>
+          <input type="text" id="setting-github-repo" value="Lara2026ss/cuaderno-glass" style="width:100%;">
+        </div>
+
+        <div class="nav-section-title">PREFERENCIAS DE AUDIO</div>
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <label style="font-size:0.85rem;">Efectos de sonido procedurables</label>
+          <input type="checkbox" id="setting-audio-toggle" checked>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:var(--text-muted);">Volumen de Audio</label>
+          <input type="range" id="setting-audio-volume" min="0" max="100" value="50" style="width:100%;">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; border-top:1px solid var(--glass-border); padding-top:12px;">
+          <button type="button" class="btn btn-glass btn-sm" id="btn-export-full-backup">📥 Exportar Backup JSON</button>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-glass btn-close-modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 2: Migración Local -> Cloud -->
-  <div class="modal-backdrop" id="modal-migration">
-    <div class="modal-card">
-      <div class="card-head">
-        <div class="card-title">☁️ Migración a Cloud Firestore</div>
-        <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
-      </div>
-      <div id="migration-modal-body"></div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-        <button type="button" class="btn btn-glass btn-sm btn-close-modal">Mantener Solo Local</button>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-migration">🚀 Migrar a Firestore</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal 3: Historial de Precios -->
+  <!-- MODAL: HISTORIAL DE PRECIOS -->
   <div class="modal-backdrop" id="modal-price-history">
     <div class="modal-card">
       <div class="card-head">
         <div class="card-title" id="price-history-title">📈 Historial de Precios</div>
         <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
       </div>
-      <div id="price-history-content"></div>
-      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-        <button type="button" class="btn btn-glass btn-sm btn-close-modal">Cerrar</button>
+      <div id="price-history-content" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: MIGRACIÓN DE DATOS LOCALES A CLOUD -->
+  <div class="modal-backdrop" id="modal-migration">
+    <div class="modal-card">
+      <div class="card-head">
+        <div class="card-title">☁️ Migración a Cloud Firestore</div>
+        <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
+      </div>
+      <div id="migration-modal-body" style="margin-top:12px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+        <button class="btn btn-glass btn-close-modal">Mantener Solo Local</button>
+        <button class="btn btn-primary" id="btn-confirm-migration">Migrar a Mi Cuenta Cloud</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Container -->
-  <div class="toast-container" id="toast-container"></div>
+  <!-- CONTENEDOR DE TOASTS FLOTANTES -->
+  <div id="toast-container" class="toast-container"></div>
 
-  <!-- Inicializador Modular ES6 -->
+  <!-- ARRANQUE ES MODULES -->
   <script type="module">
     import { bootstrap } from './src/app/bootstrap.js';
     window.addEventListener('DOMContentLoaded', () => {
