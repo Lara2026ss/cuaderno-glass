@@ -1,5 +1,5 @@
 /**
- * Test Runner Maestro — Cuaderno Glass Pro 5.0 (7 Suites Completas)
+ * Test Runner Maestro — Cuaderno Glass Pro 6.0 (7 Suites Completas)
  */
 
 import { runStateTests } from './unit-state.test.js';
@@ -12,7 +12,7 @@ import { runSecurityScan } from './security-scan.test.js';
 
 async function main() {
   console.log('======================================================');
-  console.log('🚀 INICIANDO BATERÍA COMPLETA DE PRUEBAS DE CUADERNO GLASS PRO 5.0');
+  console.log('🚀 INICIANDO BATERÍA COMPLETA DE PRUEBAS DE CUADERNO GLASS PRO 6.0');
   console.log('======================================================\n');
 
   try {

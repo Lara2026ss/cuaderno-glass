@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('📦 Iniciando compilación de Cuaderno Glass Pro 4.0...');
+console.log('📦 Iniciando compilación de Cuaderno Glass Pro 6.0...');
 
 const distDir = path.join(__dirname, 'dist');
 if (!fs.existsSync(distDir)) {
@@ -45,6 +45,6 @@ if (fs.existsSync(stylesDir)) {
 // 2. Escribir archivo de distribución en dist/cuaderno.html
 const outputDistPath = path.join(distDir, 'cuaderno.html');
 fs.writeFileSync(outputDistPath, htmlContent, 'utf-8');
-console.log(`✅ Build generado exclusivamente en: ${outputDistPath}`);
 
-console.log('🎉 Compilación finalizada exitosamente.');
+console.log(`✅ Build generado exclusivamente en: ${outputDistPath}`);
+console.log('🎉 Compilación finalizada exitosamente.\n');
