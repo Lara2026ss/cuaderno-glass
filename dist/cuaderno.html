@@ -794,10 +794,15 @@ input:focus, select:focus, textarea:focus {
                 <span class="badge-tag" id="scratchpad-save-status">Guardado</span>
               </div>
               <textarea class="scratchpad" id="scratchpad-area" placeholder="Escribe ideas al instante... Se guardan automáticamente y son accesibles en toda la suite."></textarea>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:6px;">
                 <span style="font-size:0.75rem; color:var(--text-soft);" id="scratchpad-chars">0 caracteres</span>
-                <button class="btn btn-glass btn-sm" id="btn-save-as-doc">Convertir a Documento 📑</button>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-glass btn-sm" id="btn-clean-notes">✨ Estructurar</button>
+                  <button class="btn btn-primary btn-sm" id="btn-save-note">💾 Guardar Nota</button>
+                  <button class="btn btn-glass btn-sm" id="btn-save-as-doc">Convertir a Doc 📑</button>
+                </div>
               </div>
+              <div id="quick-notes-list" style="margin-top:12px; max-height:160px; overflow-y:auto;"></div>
             </div>
           </div>
 
