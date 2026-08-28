@@ -3,6 +3,7 @@
  */
 
 import { store } from '../app/state.js';
+import { events } from '../app/events.js';
 import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
 import { escapeHtml, formatTime } from '../ui/components.js';
@@ -18,6 +19,15 @@ export class NotesFeature {
     this.listContainer = document.getElementById('quick-notes-list');
     this.textarea = document.getElementById('scratchpad-area');
 
+    // Restaurar borrador del bloc de notas si existe
+    if (this.textarea) {
+      const draft = store.get('scratchpadDraft', '');
+      if (draft) this.textarea.value = draft;
+      this.textarea.addEventListener('input', (e) => {
+        store.set('scratchpadDraft', e.target.value, { emitEvent: false });
+      });
+    }
+
     const btnSave = document.getElementById('btn-save-note');
     if (btnSave) {
       btnSave.addEventListener('click', () => this.saveNote());
@@ -27,6 +37,10 @@ export class NotesFeature {
     if (btnClean) {
       btnClean.addEventListener('click', () => this.structureWithAI());
     }
+
+    // Escuchadores reactivos de sincronización Firestore
+    events.on('firestore:notes:synced', () => this.render());
+    events.on('state:notes', () => this.render());
 
     this.render();
   }
@@ -50,6 +64,7 @@ export class NotesFeature {
     firestoreRepo.saveItem('notes', note).catch(() => {});
 
     if (this.textarea) this.textarea.value = '';
+    store.set('scratchpadDraft', '', { emitEvent: false });
     audio.soundClick();
     toast.success('Nota rápida guardada');
     this.render();

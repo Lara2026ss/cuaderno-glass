@@ -47,6 +47,7 @@ export class ModalManager {
       'setting-fb-projectid': fbConfig.projectId || '',
       'setting-fb-storagebucket': fbConfig.storageBucket || '',
       'setting-fb-appid': fbConfig.appId || '',
+      'setting-google-clientid': settings.googleClientId || '',
       'setting-discord-webhook': settings.discordWebhookUrl || '',
       'setting-github-repo': settings.githubRepo || 'Lara2026ss/cuaderno-glass',
       'setting-render-apikey': settings.renderApiKey || '',
@@ -78,6 +79,7 @@ export class ModalManager {
     }
 
     store.set('settings.firebaseConfig', firebaseConfig);
+    store.set('settings.googleClientId', getVal('setting-google-clientid'));
     store.set('settings.discordWebhookUrl', getVal('setting-discord-webhook'));
     store.set('settings.githubRepo', getVal('setting-github-repo') || 'Lara2026ss/cuaderno-glass');
     store.set('settings.renderApiKey', getVal('setting-render-apikey'));
@@ -160,6 +162,55 @@ export class ModalManager {
       }
     }
     this.open('modal-price-history');
+  }
+
+  openDrivePicker(files = [], onFilePicked = null) {
+    let modal = document.getElementById('modal-drive-picker');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'modal-backdrop';
+      modal.id = 'modal-drive-picker';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="modal-card">
+        <div class="card-head">
+          <div class="card-title">☁️ Explorar Google Drive</div>
+          <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
+        </div>
+        <div style="max-height: 320px; overflow-y: auto; margin: 12px 0;">
+          ${files.length === 0 ? '<p style="text-align:center; padding:20px; color:var(--text-soft);">No se encontraron archivos compatibles en Google Drive.</p>' :
+            files.map(f => `
+              <div class="task-row drive-file-item" style="cursor:pointer;" data-id="${f.id}" data-name="${escapeHtml(f.name)}" data-mime="${f.mimeType}">
+                <span style="font-size:1.2rem;">${f.mimeType.includes('document') ? '📄' : '📑'}</span>
+                <div class="task-details">
+                  <div class="task-text">${escapeHtml(f.name)}</div>
+                  <div class="task-sub">ID: ${f.id}</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Importar</button>
+              </div>
+            `).join('')
+          }
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-glass btn-sm btn-close-modal">Cerrar</button>
+        </div>
+      </div>
+    `;
+
+    modal.querySelectorAll('.btn-close-modal').forEach(b => b.addEventListener('click', () => this.close()));
+    modal.querySelectorAll('.drive-file-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        const name = item.dataset.name;
+        const mimeType = item.dataset.mime;
+        this.close();
+        if (onFilePicked) onFilePicked({ id, name, mimeType });
+      });
+    });
+
+    this.open('modal-drive-picker');
   }
 }
 
