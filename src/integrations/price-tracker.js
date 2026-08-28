@@ -8,12 +8,15 @@ import { audio } from '../audio/audio-engine.js';
 import { discordAdapter } from './discord.js';
 import { events } from '../app/events.js';
 
+const genericStore = { id: 'Web Store', name: 'Tienda Online', icon: '🌐', color: '#818cf8' };
+
 export const STORES = {
   AMAZON: { id: 'Amazon', name: 'Amazon', icon: '🛒', color: '#ff9900' },
   ENEBA: { id: 'Eneba', name: 'Eneba', icon: '🎮', color: '#00e5a3' },
   MERCADOLIBRE: { id: 'Mercado Libre', name: 'Mercado Libre', icon: '📦', color: '#ffe600' },
   STEAM: { id: 'Steam', name: 'Steam', icon: '🕹️', color: '#66c0f4' },
-  GENERIC: { id: 'Web Store', name: 'Tienda Online', icon: '🌐', color: '#818cf8' }
+  GENERIC: genericStore,
+  OTHER: genericStore
 };
 
 export function detectStoreFromUrl(url) {
@@ -34,6 +37,7 @@ export function calculateDiscountMetrics(normalPrice, currentPrice) {
     return {
       discountPercent: 0,
       savings: 0,
+      savingsAmount: 0,
       hasDiscount: false
     };
   }
@@ -44,6 +48,7 @@ export function calculateDiscountMetrics(normalPrice, currentPrice) {
   return {
     discountPercent,
     savings: Math.round(savings * 100) / 100,
+    savingsAmount: Math.round(savings * 100) / 100,
     hasDiscount: true
   };
 }
@@ -89,6 +94,8 @@ export class PriceTrackerService {
       ]
     };
 
+    item.history = item.priceHistory;
+
     const trackers = store.get('priceTrackers', []);
     trackers.unshift(item);
     store.set('priceTrackers', trackers);
@@ -101,6 +108,26 @@ export class PriceTrackerService {
     }
 
     return item;
+  }
+
+  createTrackerItem(params) {
+    const item = this.createTracker({
+      storeName: params.storeName || (params.url ? detectStoreFromUrl(params.url).name : 'Tienda Online'),
+      productName: params.name || params.productName || 'Producto',
+      url: params.url || '',
+      currency: params.currency || 'USD',
+      normalPrice: params.normalPrice,
+      currentPrice: params.currentPrice,
+      targetPrice: params.targetPrice
+    });
+    item.name = item.productName;
+    item.history = item.priceHistory;
+    return item;
+  }
+
+  checkTargetAlert(tracker, newPrice) {
+    const price = typeof newPrice === 'number' ? newPrice : tracker.currentPrice;
+    return tracker.targetPrice > 0 && price > 0 && price <= tracker.targetPrice;
   }
 
   async checkPrice(trackerId) {

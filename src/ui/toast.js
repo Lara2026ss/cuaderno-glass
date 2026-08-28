@@ -10,6 +10,7 @@ export class ToastManager {
   }
 
   _getContainer() {
+    if (typeof document === 'undefined') return null;
     if (!this.container) {
       let el = document.getElementById('toast-container');
       if (!el) {
@@ -25,6 +26,7 @@ export class ToastManager {
 
   show(message, type = 'info', duration = 3200) {
     const container = this._getContainer();
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
@@ -35,10 +37,15 @@ export class ToastManager {
       info: 'ℹ️'
     };
 
-    toast.innerHTML = `
-      <span style="font-size: 1.1rem;">${icons[type] || '✨'}</span>
-      <span>${message}</span>
-    `;
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '1.1rem';
+    iconSpan.textContent = icons[type] || '✨';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = String(message);
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(textSpan);
 
     container.appendChild(toast);
 

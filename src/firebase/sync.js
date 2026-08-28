@@ -36,28 +36,57 @@ export class DataSynchronizer {
   async handleUserSignIn(user) {
     logger.info('DataSync', `Iniciando sincronización para usuario ${user.uid}`);
     
-    // Suscribir colecciones en tiempo real
+    // 1. Snapshot defensivo de datos locales previo a cualquier onSnapshot
+    const localTasks = store.get('tasks', []);
+    const localNotes = store.get('notes', []);
+    const localDocs = store.get('documents', []);
+    const localTrackers = store.get('priceTrackers', []);
+
+    this.localMigrationSnapshot = {
+      tasks: Array.isArray(localTasks) ? [...localTasks] : [],
+      notes: Array.isArray(localNotes) ? [...localNotes] : [],
+      documents: Array.isArray(localDocs) ? [...localDocs] : [],
+      priceTrackers: Array.isArray(localTrackers) ? [...localTrackers] : []
+    };
+
+    const totalLocalItems = this.localMigrationSnapshot.tasks.length +
+                            this.localMigrationSnapshot.notes.length +
+                            this.localMigrationSnapshot.documents.length +
+                            this.localMigrationSnapshot.priceTrackers.length;
+
+    if (totalLocalItems > 0 && !store.get('sync.migrationCompleted', false)) {
+      store.set('sync.migrationSnapshot', this.localMigrationSnapshot, { skipSave: false });
+    }
+
+    // 2. Suscribir colecciones en tiempo real de Firestore
     firestoreRepo.subscribeToCollection('tasks', 'tasks');
     firestoreRepo.subscribeToCollection('notes', 'notes');
     firestoreRepo.subscribeToCollection('documents', 'documents');
     firestoreRepo.subscribeToCollection('priceTrackers', 'priceTrackers');
 
-    // Procesar mutaciones pendientes
+    // 3. Procesar mutaciones pendientes
     await this.processOfflineQueue();
 
-    // Verificar si hay datos locales previos para ofrecer migración
+    // 4. Verificar si hay datos locales previos para ofrecer migración
     this.checkPendingLocalMigration();
   }
 
   checkPendingLocalMigration() {
-    const tasks = store.get('tasks', []);
-    const notes = store.get('notes', []);
-    const docs = store.get('documents', []);
-    const trackers = store.get('priceTrackers', []);
+    const snapshot = this.localMigrationSnapshot || store.get('sync.migrationSnapshot');
+    if (!snapshot) return;
+
+    const tasks = snapshot.tasks || [];
+    const notes = snapshot.notes || [];
+    const docs = snapshot.documents || [];
+    const trackers = snapshot.priceTrackers || [];
 
     const totalLocalItems = tasks.length + notes.length + docs.length + trackers.length;
     if (totalLocalItems > 0 && !store.get('sync.migrationCompleted', false)) {
       events.emit('sync:migration-available', {
+        tasks: tasks.length,
+        notes: notes.length,
+        docs: docs.length,
+        trackers: trackers.length,
         tasksCount: tasks.length,
         notesCount: notes.length,
         docsCount: docs.length,
@@ -71,27 +100,36 @@ export class DataSynchronizer {
     store.set('sync.isSyncing', true);
 
     try {
-      const tasks = store.get('tasks', []);
+      const snapshot = this.localMigrationSnapshot || store.get('sync.migrationSnapshot') || {
+        tasks: store.get('tasks', []),
+        notes: store.get('notes', []),
+        documents: store.get('documents', []),
+        priceTrackers: store.get('priceTrackers', [])
+      };
+
+      const tasks = snapshot.tasks || [];
       for (const t of tasks) {
         await firestoreRepo.saveItem('tasks', t);
       }
 
-      const notes = store.get('notes', []);
+      const notes = snapshot.notes || [];
       for (const n of notes) {
         await firestoreRepo.saveItem('notes', n);
       }
 
-      const docs = store.get('documents', []);
+      const docs = snapshot.documents || [];
       for (const d of docs) {
         await firestoreRepo.saveItem('documents', d);
       }
 
-      const trackers = store.get('priceTrackers', []);
+      const trackers = snapshot.priceTrackers || [];
       for (const tr of trackers) {
         await firestoreRepo.saveItem('priceTrackers', tr);
       }
 
       store.set('sync.migrationCompleted', true);
+      store.set('sync.migrationSnapshot', null);
+      this.localMigrationSnapshot = null;
       store.set('sync.lastCloudSync', new Date().toISOString());
       logger.info('DataSync', 'Migración local a cloud completada con éxito');
       return true;

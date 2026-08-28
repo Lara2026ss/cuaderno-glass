@@ -1,20 +1,12 @@
 /**
- * Tests: Firebase Authentication & Error Mapping Unit Suite (8 Tests)
+ * Tests: Firebase Authentication, Error Mapping & Data Sync Unit Suite (9 Tests)
  */
 
-const assert = require('assert');
+import assert from 'assert';
+import { setupTestEnvironment } from './test-helper.js';
 
 function setupMockFirebase() {
-  global.window = {
-    location: { hostname: 'localhost' }
-  };
-  global.localStorage = {
-    _data: {},
-    getItem(k) { return this._data[k] || null; },
-    setItem(k, v) { this._data[k] = String(v); },
-    removeItem(k) { delete this._data[k]; },
-    clear() { this._data = {}; }
-  };
+  const env = setupTestEnvironment();
 
   global.firebase = {
     apps: [],
@@ -24,6 +16,34 @@ function setupMockFirebase() {
       return app;
     },
     app: () => global.firebase.apps[0],
+    firestore: Object.assign(() => {
+      const makeSubcollection = () => ({
+        doc: () => ({
+          get: async () => ({ exists: false, data: () => null }),
+          set: async () => {},
+          delete: async () => {}
+        }),
+        onSnapshot: (callback) => {
+          global.firebase._snapshotCallback = callback;
+          return () => {};
+        }
+      });
+
+      return {
+        collection: () => ({
+          doc: () => ({
+            get: async () => ({ exists: false, data: () => null }),
+            set: async () => {},
+            delete: async () => {},
+            collection: () => makeSubcollection()
+          }),
+          onSnapshot: (callback) => {
+            global.firebase._snapshotCallback = callback;
+            return () => {};
+          }
+        })
+      };
+    }, {}),
     auth: Object.assign(() => ({
       setPersistence: async () => {},
       onAuthStateChanged: (cb) => {
@@ -43,16 +63,19 @@ function setupMockFirebase() {
       }
     })
   };
+
+  return env;
 }
 
-async function runAuthTests() {
-  console.log('🧪 Ejecutando pruebas unitarias: Firebase Authentication & Error Mapping (8 Tests)...');
-  setupMockFirebase();
+export async function runAuthTests() {
+  console.log('🧪 Ejecutando pruebas unitarias: Firebase Authentication & Error Mapping (9 Tests)...');
+  const env = setupMockFirebase();
 
   const { fetchServerFirebaseConfig, isValidFirebaseConfig } = await import('../src/firebase/config.js');
   const { authService, AUTH_ERRORS } = await import('../src/firebase/auth.js');
   const { store } = await import('../src/app/state.js');
   const { events } = await import('../src/app/events.js');
+  const { synchronizer } = await import('../src/firebase/sync.js');
 
   // Test 1 — Firebase Configuration Validation
   const config = await fetchServerFirebaseConfig();
@@ -134,14 +157,45 @@ async function runAuthTests() {
   assert.strictEqual(loginEmitted, true, 'Debe emitir evento auth:user-signed-in');
   console.log('  ✓ Test 8: Restauración y resolución de sesión validada');
 
-  console.log('✅ Todas las pruebas de Authentication pasaron con éxito (8/8).\n');
+  // Test 9 — Guest Data Preservation on Sign-in (BUG-001)
+  store.set('user', null);
+  store.set('session.isAuthenticated', false);
+  store.set('tasks', [{ id: 'guest-t1', text: 'Important Guest Task', category: 'Personal', completed: false }]);
+  store.set('notes', [{ id: 'guest-n1', title: 'Guest Note', content: 'Secret idea' }]);
+
+  let migrationEventEmitted = false;
+  events.on('sync:migration-available', (counts) => {
+    if (counts && counts.tasks === 1) migrationEventEmitted = true;
+  });
+
+  synchronizer.init();
+  await authService.init();
+
+  // Simular login con Firestore remoto vacío
+  await global.firebase._authChangedCb({
+    uid: 'new-cloud-user-999',
+    displayName: 'New Cloud User',
+    email: 'newuser@example.com',
+    getIdToken: async () => 'mock-token'
+  });
+
+  // Simular snapshot de Firestore que retorna vacío
+  if (global.firebase._snapshotCallback) {
+    global.firebase._snapshotCallback({ docs: [], forEach: () => {} });
+  }
+
+  // Verificar que los datos del invitado no fueron destruidos/sobreescritos a 0
+  assert.strictEqual(migrationEventEmitted, true, 'Debe emitir sync:migration-available preservando el snapshot de datos guest');
+  assert.ok(store.get('tasks').length > 0, 'Las tareas locales del guest no deben ser destruidas silenciosamente');
+  assert.strictEqual(store.get('tasks')[0].id, 'guest-t1');
+  console.log('  ✓ Test 9: Protección de datos locales y buffer de migración verificado (BUG-001)');
+
+  console.log('✅ Todas las pruebas de Authentication pasaron con éxito (9/9).\n');
 }
 
-if (require.main === module) {
+if (process.argv[1] && process.argv[1].endsWith('unit-auth.test.js')) {
   runAuthTests().catch(err => {
     console.error('❌ Error en pruebas de Authentication:', err);
     process.exit(1);
   });
 }
-
-module.exports = { runAuthTests };

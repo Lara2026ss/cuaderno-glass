@@ -2,11 +2,15 @@
  * Tests: HTML & Security Structure Audit
  */
 
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function runHtmlAudit() {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function runHtmlAudit() {
   console.log('🧪 Ejecutando auditoría de HTML y Estructura Semántica...');
 
   const htmlPath = path.join(__dirname, '..', 'index.html');
@@ -48,13 +52,17 @@ function runHtmlAudit() {
     'full-timer-val',
     'modal-settings',
     'modal-migration',
-    'modal-price-history'
+    'modal-price-history',
+    'setting-google-clientid',
+    'btn-import-drive',
+    'btn-export-pdf',
+    'doc-sync-status'
   ];
 
   requiredIds.forEach(id => {
     assert.ok(content.includes(`id="${id}"`), `El HTML debe contener el elemento id="${id}"`);
   });
-  console.log(`  ✓ ${requiredIds.length} elementos estructurales e IDs verificados`);
+  console.log(`  ✓ ${requiredIds.length} elementos estructurales e IDs verificados (incluyendo setting-google-clientid)`);
 
   // 2. Verificar que no haya credenciales hardcodeadas en el HTML
   const forbiddenPatterns = [
@@ -71,7 +79,7 @@ function runHtmlAudit() {
   console.log('✅ Auditoría de HTML completada exitosamente.\n');
 }
 
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   try {
     runHtmlAudit();
   } catch (err) {
@@ -79,5 +87,3 @@ if (require.main === module) {
     process.exit(1);
   }
 }
-
-module.exports = { runHtmlAudit };

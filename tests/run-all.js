@@ -1,17 +1,18 @@
 /**
- * Test Runner Maestro — Cuaderno Glass Pro 4.0 (6 Suites Completas)
+ * Test Runner Maestro — Cuaderno Glass Pro 5.0 (7 Suites Completas)
  */
 
-const { runStateTests } = require('./unit-state.test.js');
-const { runPriceTrackerTests } = require('./unit-price-tracker.test.js');
-const { runIntegrationsTests } = require('./unit-integrations.test.js');
-const { runAuthTests } = require('./unit-auth.test.js');
-const { runHtmlAudit } = require('./html-audit.test.js');
-const { runSecurityScan } = require('./security-scan.test.js');
+import { runStateTests } from './unit-state.test.js';
+import { runPriceTrackerTests } from './unit-price-tracker.test.js';
+import { runIntegrationsTests } from './unit-integrations.test.js';
+import { runAuthTests } from './unit-auth.test.js';
+import { runDriveGeminiTests } from './unit-drive-gemini.test.js';
+import { runHtmlAudit } from './html-audit.test.js';
+import { runSecurityScan } from './security-scan.test.js';
 
 async function main() {
   console.log('======================================================');
-  console.log('🚀 INICIANDO BATERÍA COMPLETA DE PRUEBAS DE CUADERNO GLASS PRO 4.0');
+  console.log('🚀 INICIANDO BATERÍA COMPLETA DE PRUEBAS DE CUADERNO GLASS PRO 5.0');
   console.log('======================================================\n');
 
   try {
@@ -19,11 +20,12 @@ async function main() {
     await runPriceTrackerTests();
     await runIntegrationsTests();
     await runAuthTests();
+    await runDriveGeminiTests();
     runHtmlAudit();
     runSecurityScan();
 
     console.log('======================================================');
-    console.log('🎉 TODAS LAS SUITES DE PRUEBAS PASARON EXITOSAMENTE (6/6)');
+    console.log('🎉 TODAS LAS SUITES DE PRUEBAS PASARON EXITOSAMENTE (7/7)');
     console.log('======================================================');
   } catch (err) {
     console.error('\n❌ BATERÍA DE PRUEBAS FALLIDA:', err);

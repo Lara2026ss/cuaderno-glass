@@ -23,6 +23,7 @@ import { documentsFeature } from '../features/documents.js';
 import { dealsFeature } from '../features/deals.js';
 import { pomodoroFeature } from '../features/pomodoro.js';
 import { searchFeature } from '../features/search.js';
+import { escapeHtml } from '../ui/components.js';
 
 export class AppBootstrap {
   async init() {
@@ -56,7 +57,22 @@ export class AppBootstrap {
     // Inicializar Router
     router.init();
 
-    logger.info('Bootstrap', 'Cuaderno Glass Pro 4.0 inicializado exitosamente');
+    // Registrar Service Worker (PWA)
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        logger.info('Bootstrap', 'Service Worker PWA registrado', { scope: reg.scope });
+      }).catch((swErr) => {
+        logger.debug('Bootstrap', 'Service Worker notice:', swErr.message);
+      });
+    }
+
+    // Escuchador de Drive Picker Fallback
+    window.addEventListener('drive:show-picker-modal', (e) => {
+      const { files, onFilePicked } = e.detail;
+      modals.openDrivePicker(files, onFilePicked);
+    });
+
+    logger.info('Bootstrap', 'Cuaderno Glass Pro 5.0 inicializado exitosamente');
   }
 
   _setupGlobalErrorBoundaries() {
@@ -317,8 +333,13 @@ export class AppBootstrap {
         if (userNameEl) userNameEl.textContent = user.displayName || 'Usuario Google';
         if (userEmailEl) userEmailEl.textContent = user.email || 'Conectado';
         if (userAvatarEl) {
-          if (user.photoURL) {
-            userAvatarEl.innerHTML = `<img src="${user.photoURL}" alt="Avatar" referrerpolicy="no-referrer">`;
+          userAvatarEl.innerHTML = '';
+          if (user.photoURL && (user.photoURL.startsWith('https://') || user.photoURL.startsWith('http://'))) {
+            const img = document.createElement('img');
+            img.src = user.photoURL;
+            img.alt = 'Avatar';
+            img.referrerPolicy = 'no-referrer';
+            userAvatarEl.appendChild(img);
           } else {
             userAvatarEl.textContent = (user.displayName || user.email || 'U')[0].toUpperCase();
           }
@@ -462,10 +483,12 @@ export class AppBootstrap {
 
       try {
         const reply = await geminiProvider.generateResponse(q);
-        botBubble.innerHTML = `✨ <strong>Gemini AI:</strong>\n${reply.replace(/\n/g, '<br>')}`;
+        const safeReply = escapeHtml(reply).replace(/\n/g, '<br>');
+        botBubble.innerHTML = `✨ <strong>Gemini AI:</strong><br>${safeReply}`;
         audio.soundNotification();
       } catch (err) {
-        botBubble.innerHTML = `⚠️ <strong style="color:var(--accent-coral);">Error:</strong> ${err.message}`;
+        const safeErr = escapeHtml(err.message || 'Error desconocido');
+        botBubble.innerHTML = `⚠️ <strong style="color:var(--accent-coral);">Error:</strong> ${safeErr}`;
         audio.soundError();
       }
       chatFlow.scrollTop = chatFlow.scrollHeight;

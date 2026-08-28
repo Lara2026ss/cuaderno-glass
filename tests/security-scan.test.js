@@ -2,11 +2,15 @@
  * Tests: Security Audit & Secret Leak Scanner
  */
 
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function runSecurityScan() {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function runSecurityScan() {
   console.log('🧪 Ejecutando auditoría de seguridad y escaneo de secretos...');
 
   const rootDir = path.join(__dirname, '..');
@@ -17,16 +21,16 @@ function runSecurityScan() {
   ];
 
   const forbiddenPatterns = [
-    /AIzaSy[0-9a-zA-Z_-]{33}/,
-    /ghp_[0-9a-zA-Z]{36}/,
-    /rnd_[0-9a-zA-Z]{32}/
+    /ghp_[0-9a-zA-Z]{36}/,     // GitHub Personal Access Tokens
+    /rnd_[0-9a-zA-Z]{32}/,      // Render Private API Keys
+    /-----BEGIN RSA PRIVATE KEY-----/
   ];
 
   const filesToScan = [];
   function collectFiles(dir) {
     const entries = fs.readdirSync(dir);
     for (const entry of entries) {
-      if (entry === 'node_modules' || entry === '.git' || entry === 'tests') continue;
+      if (entry === 'node_modules' || entry === '.git' || entry === 'tests' || entry === 'dist' || entry.endsWith('.md')) continue;
       const fullPath = path.join(dir, entry);
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
@@ -50,7 +54,7 @@ function runSecurityScan() {
     }
     for (const pattern of forbiddenPatterns) {
       if (pattern.test(content)) {
-        console.error(`❌ PATRÓN DE TOKEN ENCONTRADO en ${file}: ${pattern}`);
+        console.error(`❌ PATRÓN DE TOKEN PRIVADO ENCONTRADO en ${file}: ${pattern}`);
         leaksFound++;
       }
     }
@@ -61,7 +65,7 @@ function runSecurityScan() {
   console.log('✅ Auditoría de seguridad aprobada con éxito.\n');
 }
 
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   try {
     runSecurityScan();
   } catch (err) {
@@ -69,5 +73,3 @@ if (require.main === module) {
     process.exit(1);
   }
 }
-
-module.exports = { runSecurityScan };

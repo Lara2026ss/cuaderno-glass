@@ -30,6 +30,7 @@ export class FirestoreRepository {
   async saveItem(collectionName, item) {
     const user = store.get('user');
     const idToken = store.get('session.idToken');
+    let savedRemotely = false;
 
     // 1. Intentar Firestore SDK directo si usuario autenticado
     const userDoc = this._getUserDocRef();
@@ -39,10 +40,13 @@ export class FirestoreRepository {
         const payload = {
           ...item,
           ownerId: user.uid,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: (typeof firebase !== 'undefined' && firebase.firestore?.FieldValue)
+            ? firebase.firestore.FieldValue.serverTimestamp()
+            : new Date().toISOString()
         };
         await docRef.set(payload, { merge: true });
         logger.debug('Firestore', `Item guardado vía Firestore SDK en ${collectionName}/${item.id}`);
+        savedRemotely = true;
         return item;
       } catch (err) {
         logger.warn('Firestore', `Error en Firestore SDK para ${collectionName}, intentando backend fallback`, { error: err.message });
@@ -50,7 +54,7 @@ export class FirestoreRepository {
     }
 
     // 2. Fallback: Endpoint backend autenticado /api/user/:collection
-    if (idToken) {
+    if (!savedRemotely && idToken) {
       try {
         const endpoint = collectionName === 'priceTrackers' ? 'price-trackers' : collectionName;
         const res = await fetch(`/api/user/${endpoint}`, {
@@ -64,6 +68,7 @@ export class FirestoreRepository {
 
         if (res.ok) {
           logger.debug('Firestore', `Item guardado vía API Backend en ${collectionName}/${item.id}`);
+          savedRemotely = true;
           return item;
         }
       } catch (beErr) {
@@ -71,9 +76,10 @@ export class FirestoreRepository {
       }
     }
 
-    // 3. Fallback Local & Offline Queue
-    if (!store.get('sync.isOnline', true) || !user) {
+    // 3. Fallback Local & Offline Queue: Capturar mutaciones no confirmadas en la nube
+    if (!savedRemotely) {
       store.enqueueMutation({ type: 'save', collection: collectionName, item });
+      logger.info('Firestore', `Mutación guardada en offlineQueue para sincronización posterior: ${collectionName}/${item.id}`);
     }
     return item;
   }
@@ -81,29 +87,39 @@ export class FirestoreRepository {
   async deleteItem(collectionName, itemId) {
     const idToken = store.get('session.idToken');
     const userDoc = this._getUserDocRef();
+    let deletedRemotely = false;
 
     if (userDoc) {
       try {
         await userDoc.collection(collectionName).doc(String(itemId)).delete();
         logger.debug('Firestore', `Item eliminado vía Firestore SDK de ${collectionName}/${itemId}`);
+        deletedRemotely = true;
         return true;
       } catch (err) {
         logger.warn('Firestore', `Error en Firestore SDK al eliminar ${collectionName}/${itemId}`, { error: err.message });
       }
     }
 
-    if (idToken) {
+    if (!deletedRemotely && idToken) {
       try {
         const endpoint = collectionName === 'priceTrackers' ? 'price-trackers' : collectionName;
         const res = await fetch(`/api/user/${endpoint}/${itemId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${idToken}` }
         });
-        if (res.ok) return true;
-      } catch (e) {}
+        if (res.ok) {
+          deletedRemotely = true;
+          return true;
+        }
+      } catch (e) {
+        logger.warn('Firestore', `Backend API error al eliminar ${collectionName}/${itemId}`, { error: e.message });
+      }
     }
 
-    store.enqueueMutation({ type: 'delete', collection: collectionName, itemId });
+    if (!deletedRemotely) {
+      store.enqueueMutation({ type: 'delete', collection: collectionName, itemId });
+      logger.info('Firestore', `Mutación delete guardada en offlineQueue: ${collectionName}/${itemId}`);
+    }
     return true;
   }
 

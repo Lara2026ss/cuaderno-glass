@@ -44,6 +44,7 @@ export class AppStore {
         audioVolume: 0.5,
         notificationsEnabled: false,
         priceCheckIntervalMins: 30,
+        googleClientId: '',
         discordWebhookUrl: '',
         firebaseConfig: null,
         githubRepo: 'Lara2026ss/cuaderno-glass',
@@ -78,7 +79,11 @@ export class AppStore {
 
       const rawQueue = localStorage.getItem(OFFLINE_QUEUE_KEY);
       if (rawQueue) {
-        this.offlineQueue = JSON.parse(rawQueue);
+        try {
+          this.offlineQueue = JSON.parse(rawQueue);
+        } catch {
+          this.offlineQueue = [];
+        }
         this.state.sync.pendingMutations = this.offlineQueue.length;
       }
     } catch (err) {
@@ -88,16 +93,38 @@ export class AppStore {
   }
 
   _migrateLegacyStorage() {
+    const safeParse = (raw, fallback) => {
+      if (!raw || typeof raw !== 'string') return fallback;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        // Si no es JSON válido (ej: texto plano 'dark' o 'light'), retornar string crudo si fallback es string
+        return typeof fallback === 'string' ? raw : fallback;
+      }
+    };
+
     try {
       const oldTasks = localStorage.getItem('cuaderno_pro_tasks');
       const oldNotes = localStorage.getItem('cuaderno_pro_notes');
       const oldDocs = localStorage.getItem('cuaderno_pro_docs');
       const oldTheme = localStorage.getItem('cuaderno_pro_theme');
 
-      if (oldTasks) this.state.tasks = JSON.parse(oldTasks);
-      if (oldNotes) this.state.notes = JSON.parse(oldNotes);
-      if (oldDocs) this.state.documents = JSON.parse(oldDocs);
-      if (oldTheme) this.state.settings.theme = JSON.parse(oldTheme);
+      if (oldTasks) {
+        const parsed = safeParse(oldTasks, []);
+        if (Array.isArray(parsed)) this.state.tasks = parsed;
+      }
+      if (oldNotes) {
+        const parsed = safeParse(oldNotes, []);
+        if (Array.isArray(parsed)) this.state.notes = parsed;
+      }
+      if (oldDocs) {
+        const parsed = safeParse(oldDocs, []);
+        if (Array.isArray(parsed)) this.state.documents = parsed;
+      }
+      if (oldTheme) {
+        const parsedTheme = safeParse(oldTheme, 'dark');
+        this.state.settings.theme = (typeof parsedTheme === 'string' && parsedTheme) ? parsedTheme : 'dark';
+      }
 
       logger.info('AppStore', 'Datos de versiones anteriores migrados exitosamente a v4');
       this.save();
