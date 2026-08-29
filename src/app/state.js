@@ -151,6 +151,11 @@ export class AppStore {
       current.version = 4;
     }
 
+    // Purgar configuraciones obsoletas de modo local si existen
+    if (current.settings && current.settings.firebaseConfig && current.settings.firebaseConfig.apiKey === 'local-mode-no-key') {
+      current.settings.firebaseConfig = null;
+    }
+
     // Merge con initial para asegurar que nuevas llaves existan
     const initial = this._getInitialState();
     return {

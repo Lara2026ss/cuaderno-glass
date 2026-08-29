@@ -20,14 +20,7 @@ let cachedConfig = null;
 export async function fetchServerFirebaseConfig() {
   if (cachedConfig) return cachedConfig;
 
-  // 1. Primero verificar si el usuario configuró credenciales personalizadas en Ajustes
-  const customConfig = store.get('settings.firebaseConfig', null);
-  if (customConfig && isValidFirebaseConfig(customConfig)) {
-    cachedConfig = customConfig;
-    return cachedConfig;
-  }
-
-  // 2. Intentar consultar endpoint público del backend si está disponible
+  // 1. Priorizar la configuración del servidor backend en Render (.env)
   try {
     const res = await fetch('/api/firebase/config');
     if (res.ok) {
@@ -41,12 +34,19 @@ export async function fetchServerFirebaseConfig() {
           apiKey: data.apiKey,
           appId: data.appId
         };
-        logger.info('FirebaseConfig', 'Configuración de Firebase Web App obtenida de backend:', { projectId: data.projectId });
+        logger.info('FirebaseConfig', 'Configuración de Firebase obtenida de backend Render:', { projectId: data.projectId });
         return cachedConfig;
       }
     }
   } catch (err) {
-    logger.debug('FirebaseConfig', 'Backend /api/firebase/config no disponible, usando preset público');
+    logger.debug('FirebaseConfig', 'Backend /api/firebase/config no disponible, usando fallbacks');
+  }
+
+  // 2. Verificar si hay credenciales personalizadas guardadas
+  const customConfig = store.get('settings.firebaseConfig', null);
+  if (customConfig && isValidFirebaseConfig(customConfig)) {
+    cachedConfig = customConfig;
+    return cachedConfig;
   }
 
   // 3. Fallback a la configuración pública oficial de la Web App
