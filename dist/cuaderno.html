@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cuaderno Glass Pro 6.0 — Personal Productivity Suite & Cloud Hub</title>
+  <title>Cuaderno Glass Pro 7.0 — Personal Productivity Suite & Cloud Hub</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -56,9 +56,9 @@
   --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
   --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
   
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-soft: #64748b;
+  --text-main: #ffffff;
+  --text-muted: #cbd5e1;
+  --text-soft: #94a3b8;
   
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -999,7 +999,7 @@ textarea {
         <div class="brand-icon">📔</div>
         <div class="brand-text">
           <div class="brand-title">CUADERNO</div>
-          <div class="brand-sub">GLASS PRO 6.0</div>
+          <div class="brand-sub">GLASS PRO 7.0</div>
         </div>
       </div>
 
@@ -1385,82 +1385,7 @@ textarea {
         <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
       </div>
 
-      <!-- Presets Rápidos -->
-      <div style="background:rgba(99,102,241,0.08); border:1px solid var(--glass-border); border-radius:var(--radius-md); padding:12px; margin-top:10px;">
-        <div style="font-size:0.78rem; font-weight:700; color:var(--primary-light); margin-bottom:8px;">⚡ CONFIGURACIÓN RÁPIDA (1-CLIC)</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary btn-sm" id="btn-preset-recommended">⚡ Cargar Preset Recomendado</button>
-          <button type="button" class="btn btn-glass btn-sm" id="btn-preset-local">💾 Modo Local Óptimo</button>
-        </div>
-      </div>
-
       <form id="form-settings" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
-        <div style="display:flex; gap:10px; margin-bottom: 15px;">
-              <button type="button" id="btn-preset-recommended" class="btn btn-glass btn-sm">Cargar Preset Cloud</button>
-          <button type="button" id="btn-preset-local" class="btn btn-glass btn-sm">Forzar Modo Local</button>
-        </div>
-        <div class="nav-section-title">⚡ GROQ AI COPILOT</div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Groq API Key (Consigue una gratis en console.groq.com)</label>
-          <input type="password" id="setting-groq-apikey" placeholder="Ingresa tu Groq API Key..." style="width:100%;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Modelo Groq</label>
-          <select id="setting-groq-model" style="width:100%;">
-            <option value="openai/gpt-oss-120b">openai/gpt-oss-120b (Function Calling nativo)</option>
-            <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
-            <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b</option>
-            <option value="groq/compound">groq/compound</option>
-          </select>
-        </div>
-
-        <div class="nav-section-title">☁️ GOOGLE CLOUD & DRIVE ORIGINS</div>
-        <div style="background:rgba(99,102,241,0.08); border-left:3px solid var(--primary-light); padding:8px 10px; border-radius:4px; font-size:0.75rem; color:var(--text-muted);">
-          ℹ️ <strong>Origen Actual:</strong> <span id="current-origin-val" style="font-family:var(--font-mono); color:var(--text-main);">https://cuaderno-glass.onrender.com</span><br>
-          Si recibes <em>Error 400: origin_mismatch</em>, añade esta URL exacta en <strong>Google Cloud Console → Credenciales → Orígenes autorizados de JavaScript</strong>.
-        </div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Google OAuth Client ID (Google Drive Hub)</label>
-          <input type="text" id="setting-google-clientid" placeholder="16044531269-...apps.googleusercontent.com" style="width:100%;">
-        </div>
-
-        <div class="nav-section-title">FIREBASE CLOUD FIRESTORE & AUTH</div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-          <div>
-            <label style="font-size:0.75rem; color:var(--text-muted);">API Key</label>
-            <input type="password" id="setting-fb-apikey" placeholder="Ingresa tu API Key...">
-          </div>
-          <div>
-            <label style="font-size:0.75rem; color:var(--text-muted);">Auth Domain</label>
-            <input type="text" id="setting-fb-authdomain" placeholder="proyecto.firebaseapp.com">
-          </div>
-          <div>
-            <label style="font-size:0.75rem; color:var(--text-muted);">Project ID</label>
-            <input type="text" id="setting-fb-projectid" placeholder="alero-company-works">
-          </div>
-          <div>
-            <label style="font-size:0.75rem; color:var(--text-muted);">App ID</label>
-            <input type="text" id="setting-fb-appid" placeholder="1:12345:web:abc">
-          </div>
-        </div>
-
-        <div class="nav-section-title">INTEGRACIONES EXTERNAS</div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Discord Webhook URL</label>
-          <input type="url" id="setting-discord-webhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Gemini AI Studio API Key</label>
-          <input type="password" id="setting-gemini-apikey" placeholder="Ingresa tu API Key..." style="width:100%;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">Render API Key</label>
-          <input type="password" id="setting-render-apikey" placeholder="Ingresa tu Render API Key..." style="width:100%;">
-        </div>
-        <div>
-          <label style="font-size:0.75rem; color:var(--text-muted);">GitHub Repo</label>
-          <input type="text" id="setting-github-repo" value="Lara2026ss/cuaderno-glass" style="width:100%;">
-        </div>
 
         <div class="nav-section-title">PREFERENCIAS DE AUDIO</div>
         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -1512,12 +1437,14 @@ textarea {
   <!-- CONTENEDOR DE TOASTS FLOTANTES -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- ARRANQUE ES MODULES -->
+  <!-- ARRANQUE ES MODULES DEFENSIVO -->
   <script type="module">
     import { bootstrap } from './src/app/bootstrap.js';
-    window.addEventListener('DOMContentLoaded', () => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => bootstrap.init());
+    } else {
       bootstrap.init();
-    });
+    }
   </script>
 </body>
 </html>

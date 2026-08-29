@@ -479,12 +479,14 @@
   <!-- CONTENEDOR DE TOASTS FLOTANTES -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- ARRANQUE ES MODULES -->
+  <!-- ARRANQUE ES MODULES DEFENSIVO -->
   <script type="module">
     import { bootstrap } from './src/app/bootstrap.js';
-    window.addEventListener('DOMContentLoaded', () => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => bootstrap.init());
+    } else {
       bootstrap.init();
-    });
+    }
   </script>
 </body>
 </html>
