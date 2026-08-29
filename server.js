@@ -53,10 +53,33 @@ app.use(cors({
 
 app.use(express.json({ limit: '5mb' }));
 
+// Buffer de telemetría y logs del servidor (últimos 150 eventos)
+const SERVER_LOGS = [];
+
+function logServerEvent(level, component, message, details = null) {
+  const entry = {
+    id: `log-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+    timestamp: new Date().toISOString(),
+    level,
+    component,
+    message,
+    details
+  };
+  SERVER_LOGS.unshift(entry);
+  if (SERVER_LOGS.length > 150) SERVER_LOGS.pop();
+
+  const detailsStr = details ? ` | ${JSON.stringify(details)}` : '';
+  console.log(`[${entry.timestamp}] [${level.toUpperCase()}] [${component}] ${message}${detailsStr}`);
+  return entry;
+}
+
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip';
+  logServerEvent('info', 'HTTP', `${req.method} ${req.originalUrl}`, { ip: clientIp, ua: (req.headers['user-agent'] || '').slice(0, 50) });
   next();
 });
 
@@ -95,15 +118,30 @@ async function verifyAuthToken(req, res, next) {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '6.0.0',
+    version: '7.0.0',
     aiEngine: 'Groq Llama 3.3 70B',
     firebaseAdmin: firebaseAdminInitialized,
     timestamp: new Date().toISOString()
   });
 });
 
+// 1.1 Logs & Observabilidad Endpoint
+app.get('/api/logs', (req, res) => {
+  const levelFilter = req.query.level;
+  const filtered = levelFilter ? SERVER_LOGS.filter(l => l.level === levelFilter) : SERVER_LOGS;
+  res.json({
+    success: true,
+    total: SERVER_LOGS.length,
+    count: filtered.length,
+    logs: filtered
+  });
+});
+
 // 2. Firebase Public Config
 app.get('/api/firebase/config', (req, res) => {
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  logServerEvent('info', 'FirebaseConfig', 'Servida configuración de Firebase a cliente', { ip: clientIp });
+
   res.json({
     projectId: process.env.FIREBASE_PROJECT_ID || 'alero-company-works',
     authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'alero-company-works.firebaseapp.com',
@@ -247,6 +285,8 @@ app.post('/api/ai/chat', async (req, res) => {
       payload.tool_choice = 'auto';
     }
 
+    logServerEvent('info', 'GroqAI', 'Procesando consulta de IA', { model, promptLength: prompt ? prompt.length : 0 });
+
     const groqRes = await fetch(groqUrl, {
       method: 'POST',
       headers: {
@@ -258,7 +298,8 @@ app.post('/api/ai/chat', async (req, res) => {
 
     if (!groqRes.ok) {
       const errBody = await groqRes.json().catch(() => ({}));
-      return res.status(groqRes.status).json({ error: 'Groq API Error', details: errBody });
+      logServerEvent('error', 'GroqAI', `Fallo de API Groq (Status: ${groqRes.status})`, { status: groqRes.status, details: errBody });
+      return res.status(groqRes.status).json({ error: 'Groq API Error', status: groqRes.status, details: errBody });
     }
 
     const data = await groqRes.json();
@@ -272,6 +313,7 @@ app.post('/api/ai/chat', async (req, res) => {
         fnArgs = JSON.parse(toolCall.function.arguments);
       } catch {}
 
+      logServerEvent('info', 'GroqAI', `Llamada a herramienta detectada: ${toolCall.function.name}`);
       return res.json({
         functionCall: {
           name: toolCall.function.name,
@@ -281,8 +323,10 @@ app.post('/api/ai/chat', async (req, res) => {
       });
     }
 
+    logServerEvent('info', 'GroqAI', 'Respuesta de IA generada con éxito');
     res.json({ reply: message?.content || 'Sin respuesta de Groq AI' });
   } catch (err) {
+    logServerEvent('error', 'GroqAI', 'Error de red o conexión interna en Groq Proxy', { error: err.message });
     res.status(500).json({ error: 'Error interno en Groq Proxy', details: err.message });
   }
 });
@@ -360,11 +404,19 @@ function startPriceMonitoringWorker() {
   }, 1000 * 60 * 30);
 }
 
+process.on('uncaughtException', (err) => {
+  logServerEvent('error', 'UncaughtException', err.message, { stack: err.stack });
+});
+
+process.on('unhandledRejection', (reason) => {
+  logServerEvent('error', 'UnhandledRejection', reason?.message || String(reason));
+});
+
 // Iniciar servidor si se ejecuta directamente
 if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   app.listen(PORT, () => {
     console.log(`\n======================================================`);
-    console.log(`🚀 CUADERNO GLASS PRO 6.0 SERVER`);
+    console.log(`🚀 CUADERNO GLASS PRO 7.0 SERVER`);
     console.log(`🌐 Servidor escuchando en: http://localhost:${PORT}`);
     console.log(`🔒 Modo seguro activo • SSRF Protection • Groq AI Copilot`);
     console.log(`======================================================\n`);
