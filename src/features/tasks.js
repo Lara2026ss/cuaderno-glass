@@ -1,34 +1,35 @@
 /**
- * Cuaderno Glass Pro 4.0 — Módulo de Tareas
+ * Cuaderno Glass Pro 6.0 — Gestor de Tareas Reactivo y Categorías
  */
 
 import { store } from '../app/state.js';
 import { events } from '../app/events.js';
-import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
-import { escapeHtml } from '../ui/components.js';
+import { audio } from '../ui/audio.js';
 import { firestoreRepo } from '../firebase/firestore.js';
-import { discordAdapter } from '../integrations/discord.js';
+import { escapeHtml } from '../utils/helpers.js';
 
 export class TasksFeature {
   constructor() {
     this.container = null;
-    this.activeCategory = 'all';
+    this.dashboardContainer = null;
+    this.activeCategory = store.get('tasksCategoryFilter', 'all');
   }
 
   init() {
-    this.container = document.getElementById('tasks-container');
+    this.container = document.getElementById('tasks-container') || document.getElementById('full-tasks-container');
+    this.dashboardContainer = document.getElementById('dashboard-tasks-container');
+
     const form = document.getElementById('form-add-task');
     if (form) {
       form.addEventListener('submit', (e) => this.handleAddTask(e));
     }
 
-    document.querySelectorAll('#task-filter-chips .chip').forEach(chip => {
+    // Soporte para chips de filtro de categoría (en vista de tareas o dashboard)
+    document.querySelectorAll('.task-category-chip, #task-filter-chips .chip, .task-filter-chips .chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        document.querySelectorAll('#task-filter-chips .chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.activeCategory = chip.dataset.cat;
-        this.render();
+        const cat = chip.dataset.cat || 'all';
+        this.setCategory(cat);
       });
     });
 
@@ -40,52 +41,75 @@ export class TasksFeature {
     this.render();
   }
 
+  setCategory(cat) {
+    this.activeCategory = cat;
+    store.set('tasksCategoryFilter', cat, { skipSave: true });
+
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.task-category-chip, #task-filter-chips .chip, .task-filter-chips .chip').forEach(c => {
+        c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
+      });
+    }
+
+    audio.soundClick();
+    this.render();
+  }
+
   handleAddTask(e) {
     e.preventDefault();
-    const input = document.getElementById('input-task-text');
-    const catSelect = document.getElementById('input-task-cat');
-    const prioSelect = document.getElementById('input-task-prio');
+    const input = document.getElementById('task-input-text') || document.getElementById('input-task-text');
+    const catSelect = document.getElementById('task-category-select') || document.getElementById('input-task-cat');
+    const prioSelect = document.getElementById('task-priority-select') || document.getElementById('input-task-prio');
 
     const text = input?.value.trim();
-    if (!text) return;
+    if (!text) {
+      toast.warning('Ingresa el texto de la tarea');
+      return;
+    }
+
+    const priority = prioSelect?.value || 'media';
+    const category = catSelect?.value || (this.activeCategory !== 'all' ? this.activeCategory : 'Trabajo');
 
     const task = {
       id: Date.now() + Math.random().toString(36).substring(2, 6),
       text,
-      category: catSelect?.value || 'Trabajo',
-      priority: prioSelect?.value || 'media',
+      category,
+      priority,
       done: false,
-      date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-      createdAt: Date.now()
+      completed: false,
+      date: new Date().toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     };
 
     const tasks = store.get('tasks', []);
     tasks.unshift(task);
     store.set('tasks', tasks);
-
     firestoreRepo.saveItem('tasks', task).catch(() => {});
 
     if (input) input.value = '';
-    audio.soundClick();
+
+    audio.soundSuccess();
     toast.success('Tarea añadida');
     this.render();
   }
 
   toggleTask(taskId) {
     const tasks = store.get('tasks', []);
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    const idx = tasks.findIndex(t => t.id === taskId);
+    if (idx === -1) return;
 
-    const newDone = !(task.done || task.completed);
-    task.done = newDone;
-    task.completed = newDone;
+    const nextState = !tasks[idx].done;
+    tasks[idx].done = nextState;
+    tasks[idx].completed = nextState;
+    tasks[idx].updatedAt = Date.now();
+
     store.set('tasks', tasks);
-    firestoreRepo.saveItem('tasks', task).catch(() => {});
+    firestoreRepo.saveItem('tasks', tasks[idx]).catch(() => {});
 
-    if (newDone) {
-      audio.soundSuccess();
-      if (typeof confetti === 'function') confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-      discordAdapter.sendTaskCompleted(task).catch(() => {});
+    if (nextState) {
+      audio.soundDone();
+      if (typeof confetti === 'function') confetti({ particleCount: 35, spread: 60 });
     } else {
       audio.soundClick();
     }
@@ -105,8 +129,9 @@ export class TasksFeature {
   }
 
   render(searchQuery = '') {
-    if (!this.container) return;
-    this.container.innerHTML = '';
+    if (typeof document === 'undefined') return;
+    this.container = document.getElementById('tasks-container') || document.getElementById('full-tasks-container');
+    this.dashboardContainer = document.getElementById('dashboard-tasks-container');
 
     let list = store.get('tasks', []);
     if (this.activeCategory !== 'all') {
@@ -114,52 +139,80 @@ export class TasksFeature {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(t => t.text.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
-    }
-
-    if (list.length === 0) {
-      this.container.innerHTML = `
-        <div style="text-align:center; padding:28px 10px; color:var(--text-soft); font-size:0.86rem;">
-          ✨ No hay tareas pendientes en esta sección.
-        </div>
-      `;
-      this.updateMetrics();
-      return;
+      list = list.filter(t => t.text.toLowerCase().includes(q) || (t.category && t.category.toLowerCase().includes(q)));
     }
 
     const prioStyles = {
-      alta: 'background:rgba(244,63,94,0.15); color:var(--accent-coral);',
-      media: 'background:rgba(245,158,11,0.15); color:var(--accent-amber);',
-      baja: 'background:rgba(16,185,129,0.15); color:var(--accent-emerald);'
+      alta: 'background:rgba(244,63,94,0.18); color:var(--accent-coral);',
+      media: 'background:rgba(245,158,11,0.18); color:var(--accent-amber);',
+      baja: 'background:rgba(16,185,129,0.18); color:var(--accent-emerald);'
     };
 
-    list.forEach(t => {
+    const buildTaskRow = (t) => {
       const isDone = Boolean(t.done || t.completed);
       const row = document.createElement('div');
       row.className = `task-row ${isDone ? 'done' : ''}`;
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '10px';
+      row.style.padding = '10px 14px';
+      row.style.background = 'rgba(255, 255, 255, 0.03)';
+      row.style.border = '1px solid var(--glass-border)';
+      row.style.borderRadius = 'var(--radius-sm)';
+      row.style.marginBottom = '8px';
+      row.style.transition = 'all var(--transition-fast)';
+
       row.innerHTML = `
-        <input type="checkbox" class="task-check" ${isDone ? 'checked' : ''} aria-label="Completar tarea">
-        <div class="task-details">
-          <div class="task-text">${escapeHtml(t.text)}</div>
-          <div class="task-sub">
+        <input type="checkbox" class="task-check" ${isDone ? 'checked' : ''} aria-label="Completar tarea" style="width:18px; height:18px; cursor:pointer;">
+        <div class="task-details" style="flex:1; min-width:0;">
+          <div class="task-text" style="font-size:0.9rem; font-weight:500; text-decoration:${isDone ? 'line-through' : 'none'}; color:${isDone ? 'var(--text-soft)' : 'var(--text-main)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.text)}</div>
+          <div class="task-sub" style="display:flex; gap:8px; align-items:center; margin-top:4px; font-size:0.72rem; color:var(--text-soft);">
             <span class="badge-tag" style="${prioStyles[t.priority] || ''}">● ${String(t.priority || 'media').toUpperCase()}</span>
             <span>🏷️ ${escapeHtml(t.category || 'Trabajo')}</span>
             <span>📅 ${escapeHtml(t.date || 'Hoy')}</span>
           </div>
         </div>
-        <button class="btn btn-danger btn-sm btn-delete-task" style="padding: 4px 8px;" title="Eliminar">✕</button>
+        <button class="btn btn-danger btn-sm btn-delete-task" style="padding: 4px 8px; font-size:0.75rem;" title="Eliminar">✕</button>
       `;
 
       row.querySelector('.task-check').addEventListener('change', () => this.toggleTask(t.id));
       row.querySelector('.btn-delete-task').addEventListener('click', () => this.deleteTask(t.id));
+      return row;
+    };
 
-      this.container.appendChild(row);
-    });
+    if (this.container) {
+      this.container.innerHTML = '';
+      if (list.length === 0) {
+        this.container.innerHTML = `
+          <div style="text-align:center; padding:28px 10px; color:var(--text-soft); font-size:0.86rem;">
+            ✨ No hay tareas en la categoría "<strong>${escapeHtml(this.activeCategory)}</strong>".
+          </div>
+        `;
+      } else {
+        list.forEach(t => this.container.appendChild(buildTaskRow(t)));
+      }
+    }
+
+    if (this.dashboardContainer) {
+      this.dashboardContainer.innerHTML = '';
+      const pendingSlice = list.filter(t => !t.done && !t.completed).slice(0, 5);
+      if (pendingSlice.length === 0) {
+        this.dashboardContainer.innerHTML = `
+          <div style="text-align:center; padding:20px 10px; color:var(--text-soft); font-size:0.84rem;">
+            🎉 ¡Todo al día! No tienes tareas pendientes.
+          </div>
+        `;
+      } else {
+        pendingSlice.forEach(t => this.dashboardContainer.appendChild(buildTaskRow(t)));
+      }
+    }
 
     this.updateMetrics();
   }
 
   updateMetrics() {
+    if (typeof document === 'undefined') return;
     const all = store.get('tasks', []);
     const pending = all.filter(t => !t.done && !t.completed).length;
     const completed = all.filter(t => t.done || t.completed).length;
@@ -171,6 +224,13 @@ export class TasksFeature {
     if (elPending) elPending.textContent = pending;
     if (elCompleted) elCompleted.textContent = completed;
     if (badgeTasks) badgeTasks.textContent = pending;
+
+    // Actualizar contadores por categoría si existen badges en chips
+    ['Trabajo', 'Personal', 'Estudio', 'Ideas'].forEach(cat => {
+      const count = all.filter(t => t.category === cat && !t.done && !t.completed).length;
+      const countEl = document.getElementById(`count-cat-${cat.toLowerCase()}`);
+      if (countEl) countEl.textContent = count;
+    });
   }
 }
 

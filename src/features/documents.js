@@ -1,20 +1,20 @@
 /**
- * Cuaderno Glass Pro 4.0 — Módulo de Documentos & Google Drive Hub
+ * Cuaderno Glass Pro 6.0 — Documentos & Google Drive Hub
  */
 
 import { store } from '../app/state.js';
 import { events } from '../app/events.js';
-import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
-import { escapeHtml, formatDate } from '../ui/components.js';
-import { firestoreRepo } from '../firebase/firestore.js';
+import { audio } from '../ui/audio.js';
 import { googleDriveAdapter } from '../integrations/google-drive.js';
+import { firestoreRepo } from '../firebase/firestore.js';
+import { formatDate, escapeHtml } from '../utils/helpers.js';
 
 export class DocumentsFeature {
   constructor() {
     this.container = null;
     this.editorBox = null;
-    this.activeCategory = 'all';
+    this.activeCategory = store.get('docsCategoryFilter', 'all');
     this.currentEditingId = null;
   }
 
@@ -22,16 +22,18 @@ export class DocumentsFeature {
     this.container = document.getElementById('documents-container');
     this.editorBox = document.getElementById('doc-editor-box');
 
-    const btnNewToggle = document.getElementById('btn-new-doc-toggle');
+    const btnNewToggle = document.getElementById('btn-new-doc-toggle') || document.getElementById('btn-new-doc');
     if (btnNewToggle) {
       btnNewToggle.addEventListener('click', () => {
         this.currentEditingId = null;
-        const titleInput = document.getElementById('doc-title-input');
-        const tagsInput = document.getElementById('doc-tags-input');
-        const bodyInput = document.getElementById('doc-body-input');
+        const titleInput = document.getElementById('doc-title-input') || document.getElementById('editor-doc-title');
+        const tagsInput = document.getElementById('doc-tags-input') || document.getElementById('editor-doc-tags');
+        const bodyInput = document.getElementById('doc-body-input') || document.getElementById('editor-doc-body');
+        const catSelect = document.getElementById('doc-category-input') || document.getElementById('editor-doc-category');
         if (titleInput) titleInput.value = '';
         if (tagsInput) tagsInput.value = '';
         if (bodyInput) bodyInput.value = '';
+        if (catSelect && this.activeCategory !== 'all') catSelect.value = this.activeCategory;
         this.toggleEditor(true);
       });
     }
@@ -47,7 +49,7 @@ export class DocumentsFeature {
             const doc = {
               id: Date.now() + Math.random().toString(36).substring(2, 6),
               title: pickedFile.name.replace(/\.[^/.]+$/, ''),
-              category: 'Estudio',
+              category: this.activeCategory !== 'all' ? this.activeCategory : 'Estudio',
               tags: ['drive', 'importado'],
               body: content || '',
               driveFileId: pickedFile.id,
@@ -69,12 +71,12 @@ export class DocumentsFeature {
       });
     }
 
-    const btnCloseEditor = document.getElementById('btn-close-doc-editor');
+    const btnCloseEditor = document.getElementById('btn-close-doc-editor') || document.getElementById('btn-close-editor');
     if (btnCloseEditor) {
       btnCloseEditor.addEventListener('click', () => this.toggleEditor(false));
     }
 
-    const btnSaveDoc = document.getElementById('btn-save-document');
+    const btnSaveDoc = document.getElementById('btn-save-document') || document.getElementById('btn-save-doc');
     if (btnSaveDoc) {
       btnSaveDoc.addEventListener('click', () => this.saveDocument());
     }
@@ -89,12 +91,10 @@ export class DocumentsFeature {
       btnExportPdf.addEventListener('click', () => this.exportCurrentAsPDF());
     }
 
-    document.querySelectorAll('#doc-category-chips .chip').forEach(chip => {
+    document.querySelectorAll('#doc-category-chips .chip, #tab-documents .filter-chips .chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        document.querySelectorAll('#doc-category-chips .chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        this.activeCategory = chip.dataset.cat;
-        this.render();
+        const cat = chip.dataset.cat || 'all';
+        this.setCategory(cat);
       });
     });
 
@@ -106,22 +106,27 @@ export class DocumentsFeature {
     this.render();
   }
 
+  setCategory(cat) {
+    this.activeCategory = cat;
+    store.set('docsCategoryFilter', cat, { skipSave: true });
+
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('#doc-category-chips .chip, #tab-documents .filter-chips .chip').forEach(c => {
+        c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
+      });
+    }
+
+    audio.soundClick();
+    this.render();
+  }
+
   toggleEditor(show = true) {
     if (this.editorBox) {
       this.editorBox.style.display = show ? 'block' : 'none';
       if (show) {
-        document.getElementById('doc-title-input')?.focus();
         this.editorBox.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        this.currentEditingId = null;
-        const titleInput = document.getElementById('doc-title-input');
-        const tagsInput = document.getElementById('doc-tags-input');
-        const bodyInput = document.getElementById('doc-body-input');
-        if (titleInput) titleInput.value = '';
-        if (tagsInput) tagsInput.value = '';
-        if (bodyInput) bodyInput.value = '';
+        this._attachAutoSaveListeners();
       }
-      audio.soundClick();
     }
   }
 
@@ -131,23 +136,22 @@ export class DocumentsFeature {
     if (!doc) return;
 
     this.currentEditingId = docId;
-    const titleInput = document.getElementById('doc-title-input');
-    const catSelect = document.getElementById('doc-category-input');
-    const tagsInput = document.getElementById('doc-tags-input');
-    const bodyInput = document.getElementById('doc-body-input');
+    const titleInput = document.getElementById('doc-title-input') || document.getElementById('editor-doc-title');
+    const tagsInput = document.getElementById('doc-tags-input') || document.getElementById('editor-doc-tags');
+    const bodyInput = document.getElementById('doc-body-input') || document.getElementById('editor-doc-body');
+    const catSelect = document.getElementById('doc-category-input') || document.getElementById('editor-doc-category');
 
-    if (titleInput) titleInput.value = doc.title;
-    if (catSelect) catSelect.value = doc.category || 'Trabajo';
+    if (titleInput) titleInput.value = doc.title || '';
     if (tagsInput) tagsInput.value = (doc.tags || []).join(', ');
     if (bodyInput) bodyInput.value = doc.body || '';
+    if (catSelect) catSelect.value = doc.category || 'General';
 
     this.toggleEditor(true);
-    this._attachAutoSaveListeners();
   }
 
   _attachAutoSaveListeners() {
-    const bodyInput = document.getElementById('doc-body-input');
-    const titleInput = document.getElementById('doc-title-input');
+    const bodyInput = document.getElementById('doc-body-input') || document.getElementById('editor-doc-body');
+    const titleInput = document.getElementById('doc-title-input') || document.getElementById('editor-doc-title');
 
     const onInput = () => {
       if (!this.currentEditingId) return;
@@ -177,8 +181,8 @@ export class DocumentsFeature {
     const idx = docs.findIndex(d => d.id === this.currentEditingId);
     if (idx === -1) return;
 
-    const title = document.getElementById('doc-title-input')?.value.trim() || docs[idx].title;
-    const body = document.getElementById('doc-body-input')?.value || '';
+    const title = (document.getElementById('doc-title-input') || document.getElementById('editor-doc-title'))?.value.trim() || docs[idx].title;
+    const body = (document.getElementById('doc-body-input') || document.getElementById('editor-doc-body'))?.value || '';
     const now = Date.now();
 
     docs[idx].title = title;
@@ -194,7 +198,6 @@ export class DocumentsFeature {
 
     if (docs[idx].driveFileId && store.get('connections.googleDrive.status') === 'connected') {
       try {
-        // Comprobar conflicto antes de sobreescribir
         const driveMeta = await googleDriveAdapter.getFileMetadata(docs[idx].driveFileId).catch(() => null);
         if (driveMeta && driveMeta.modifiedTime) {
           const driveTime = new Date(driveMeta.modifiedTime).getTime();
@@ -226,10 +229,10 @@ export class DocumentsFeature {
   }
 
   saveDocument() {
-    const titleInput = document.getElementById('doc-title-input');
-    const catSelect = document.getElementById('doc-category-input');
-    const tagsInput = document.getElementById('doc-tags-input');
-    const bodyInput = document.getElementById('doc-body-input');
+    const titleInput = document.getElementById('doc-title-input') || document.getElementById('editor-doc-title');
+    const catSelect = document.getElementById('doc-category-input') || document.getElementById('editor-doc-category');
+    const tagsInput = document.getElementById('doc-tags-input') || document.getElementById('editor-doc-tags');
+    const bodyInput = document.getElementById('doc-body-input') || document.getElementById('editor-doc-body');
 
     const title = titleInput?.value.trim();
     const body = bodyInput?.value.trim();
@@ -295,8 +298,8 @@ export class DocumentsFeature {
   }
 
   exportCurrentAsMarkdown() {
-    const title = document.getElementById('doc-title-input')?.value.trim() || 'documento';
-    const body = document.getElementById('doc-body-input')?.value.trim() || '';
+    const title = (document.getElementById('doc-title-input') || document.getElementById('editor-doc-title'))?.value.trim() || 'documento';
+    const body = (document.getElementById('doc-body-input') || document.getElementById('editor-doc-body'))?.value.trim() || '';
 
     if (!body) {
       toast.warning('No hay contenido para exportar');
@@ -312,103 +315,79 @@ export class DocumentsFeature {
   }
 
   exportCurrentAsPDF() {
-    const title = document.getElementById('doc-title-input')?.value.trim() || 'Documento';
-    const body = document.getElementById('doc-body-input')?.value.trim() || '';
+    const title = (document.getElementById('doc-title-input') || document.getElementById('editor-doc-title'))?.value.trim() || 'Documento';
+    const body = (document.getElementById('doc-body-input') || document.getElementById('editor-doc-body'))?.value.trim() || '';
 
     if (!body) {
       toast.warning('No hay contenido para exportar a PDF');
       return;
     }
 
-    const printWin = window.open('', '_blank', 'width=800,height=900');
+    const printWin = window.open('', '_blank');
     if (!printWin) {
-      toast.error('La ventana emergente fue bloqueada por el navegador');
+      toast.warning('Permite ventanas emergentes para exportar a PDF');
       return;
     }
 
-    const safeTitle = escapeHtml(title);
-    const safeBody = escapeHtml(body).replace(/\n/g, '<br>');
-
     printWin.document.write(`
       <!DOCTYPE html>
-      <html lang="es">
+      <html>
       <head>
-        <meta charset="utf-8">
-        <title>${safeTitle} — Cuaderno Glass Pro 6.0</title>
+        <title>${escapeHtml(title)}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-          body {
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            background: #ffffff;
-            color: #0f172a;
-            padding: 40px;
-            line-height: 1.7;
-          }
-          .doc-header {
-            border-bottom: 2px solid #6366f1;
-            padding-bottom: 18px;
-            margin-bottom: 24px;
-          }
-          h1 {
-            color: #1e1b4b;
-            font-size: 28px;
-            margin: 0 0 8px 0;
-          }
-          .meta {
-            color: #64748b;
-            font-size: 13px;
-          }
-          .content {
-            font-size: 15px;
-            white-space: pre-wrap;
-            color: #334155;
-          }
-          .footer {
-            margin-top: 40px;
-            padding-top: 14px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 11px;
-            color: #94a3b8;
-            display: flex;
-            justify-content: space-between;
-          }
-          @media print {
-            body { padding: 0; }
-            @page { margin: 2cm; }
-          }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+          h1 { border-bottom: 2px solid #6366f1; padding-bottom: 10px; font-size: 2rem; }
+          pre { background: #f4f4f5; padding: 16px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; }
         </style>
       </head>
       <body>
-        <div class="doc-header">
-          <h1>${safeTitle}</h1>
-          <div class="meta">Exportado desde Cuaderno Glass Pro 6.0 • ${new Date().toLocaleDateString('es-ES', { dateStyle: 'full' })}</div>
-        </div>
-        <div class="content">${safeBody}</div>
-        <div class="footer">
-          <span>Cuaderno Glass Pro — Suite de Productividad Personal</span>
-          <span>Página 1 de 1</span>
-        </div>
+        <h1>${escapeHtml(title)}</h1>
+        <div>${escapeHtml(body).replace(/\n/g, '<br>')}</div>
         <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function() { window.close(); }, 750);
-          };
+          window.onload = function() { window.print(); }
         </script>
       </body>
       </html>
     `);
     printWin.document.close();
-    toast.success('Generando documento imprimible / PDF...');
   }
 
   async uploadToGoogleDrive(doc) {
+    if (store.get('connections.googleDrive.status') !== 'connected') {
+      toast.warning('Conecta Google Drive en la sección de Conectores para sincronizar');
+      return;
+    }
+
     try {
-      toast.info('Subiendo documento a Google Drive...');
-      const content = `# ${doc.title}\n\nCategoría: ${doc.category}\nTags: ${doc.tags.join(', ')}\n\n${doc.body}`;
-      await googleDriveAdapter.uploadFile(`${doc.title}.md`, content, 'text/markdown');
+      toast.info(`Subiendo "${doc.title}" a Google Drive...`);
+      const mdContent = `# ${doc.title}\n\n${doc.body}`;
+      let res;
+
+      if (doc.driveFileId) {
+        res = await googleDriveAdapter.updateFile(doc.driveFileId, mdContent);
+      } else {
+        res = await googleDriveAdapter.createFile(`${doc.title}.md`, mdContent, 'text/markdown');
+      }
+
+      doc.driveFileId = res.id;
+      doc.driveWebViewLink = res.webViewLink;
+      doc.syncStatus = 'SYNCED';
+      doc.lastSyncedAt = Date.now();
+
+      const docs = store.get('documents', []);
+      const idx = docs.findIndex(d => d.id === doc.id);
+      if (idx !== -1) {
+        docs[idx] = doc;
+        store.set('documents', docs);
+        firestoreRepo.saveItem('documents', doc).catch(() => {});
+      }
+
       audio.soundSuccess();
-      toast.success(`"${doc.title}" subido a Google Drive`);
+      toast.success(`"${doc.title}" sincronizado con Google Drive`);
+      this.render();
     } catch (e) {
+      doc.syncStatus = 'ERROR';
+      doc.syncError = e.message;
       toast.error('Error al subir a Drive: ' + e.message);
     }
   }
@@ -425,7 +404,7 @@ export class DocumentsFeature {
   }
 
   render(searchQuery = '') {
-    if (!this.container) return;
+    if (typeof document === 'undefined' || !this.container) return;
     this.container.innerHTML = '';
 
     let list = store.get('documents', []);
@@ -492,6 +471,7 @@ export class DocumentsFeature {
   }
 
   updateMetrics() {
+    if (typeof document === 'undefined') return;
     const docs = store.get('documents', []);
     const statDocs = document.getElementById('stat-docs-count');
     const badgeDocs = document.getElementById('badge-docs');

@@ -1,25 +1,25 @@
 /**
- * Cuaderno Glass Pro 4.0 — Pomodoro Focus Engine
+ * Cuaderno Glass Pro 6.0 — Pomodoro Focus Timer
  */
 
 import { store } from '../app/state.js';
-import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
+import { audio } from '../ui/audio.js';
 
 export class PomodoroFeature {
   constructor() {
-    this.timerInt = null;
     this.durations = {
       work: 25 * 60,
       shortBreak: 5 * 60,
       longBreak: 15 * 60
     };
+    this.timerInt = null;
   }
 
   init() {
-    const btnToggle = document.getElementById('btn-timer-toggle');
+    const btnToggle = document.getElementById('btn-timer-toggle') || document.getElementById('btn-pomo-toggle');
     const btnDashToggle = document.getElementById('btn-dash-timer');
-    const btnReset = document.getElementById('btn-timer-reset');
+    const btnReset = document.getElementById('btn-timer-reset') || document.getElementById('btn-pomo-reset');
     const btnDashReset = document.getElementById('btn-dash-reset');
 
     if (btnToggle) btnToggle.addEventListener('click', () => this.toggle());
@@ -27,9 +27,9 @@ export class PomodoroFeature {
     if (btnReset) btnReset.addEventListener('click', () => this.reset());
     if (btnDashReset) btnDashReset.addEventListener('click', () => this.reset());
 
-    const chipWork = document.getElementById('pomo-w');
-    const chipShort = document.getElementById('pomo-s');
-    const chipLong = document.getElementById('pomo-l');
+    const chipWork = document.getElementById('pomo-w') || document.getElementById('pomo-mode-work');
+    const chipShort = document.getElementById('pomo-s') || document.getElementById('pomo-mode-short');
+    const chipLong = document.getElementById('pomo-l') || document.getElementById('pomo-mode-long');
 
     if (chipWork) chipWork.addEventListener('click', () => this.setMode('work'));
     if (chipShort) chipShort.addEventListener('click', () => this.setMode('shortBreak'));
@@ -43,10 +43,18 @@ export class PomodoroFeature {
     store.set('pomodoro.mode', mode);
     store.set('pomodoro.remainingSeconds', this.durations[mode]);
 
-    document.querySelectorAll('#tab-pomodoro .chip').forEach(c => c.classList.remove('active'));
-    const map = { work: 'pomo-w', shortBreak: 'pomo-s', longBreak: 'pomo-l' };
-    const activeChip = document.getElementById(map[mode]);
-    if (activeChip) activeChip.classList.add('active');
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('#tab-pomodoro .chip, .pomo-chip').forEach(c => c.classList.remove('active'));
+      const map = {
+        work: ['pomo-w', 'pomo-mode-work'],
+        shortBreak: ['pomo-s', 'pomo-mode-short'],
+        longBreak: ['pomo-l', 'pomo-mode-long']
+      };
+      (map[mode] || []).forEach(id => {
+        const activeChip = document.getElementById(id);
+        if (activeChip) activeChip.classList.add('active');
+      });
+    }
 
     audio.soundClick();
     this.updateDisplay();
@@ -118,6 +126,7 @@ export class PomodoroFeature {
   }
 
   updateDisplay() {
+    if (typeof document === 'undefined') return;
     const rem = store.get('pomodoro.remainingSeconds', 25 * 60);
     const formatted = this.formatTime(rem);
 
@@ -129,7 +138,8 @@ export class PomodoroFeature {
   }
 
   updateButtonLabels(isRunning) {
-    const fullBtn = document.getElementById('btn-timer-toggle');
+    if (typeof document === 'undefined') return;
+    const fullBtn = document.getElementById('btn-timer-toggle') || document.getElementById('btn-pomo-toggle');
     const dashBtn = document.getElementById('btn-dash-timer');
 
     const label = isRunning ? '⏸ Pausar' : '▶ Iniciar';

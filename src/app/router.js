@@ -8,7 +8,7 @@ import { logger } from './logger.js';
 export class AppRouter {
   constructor(defaultTab = 'dashboard') {
     this.currentTab = defaultTab;
-    this.tabs = ['dashboard', 'deals', 'documents', 'gemini', 'groq', 'connectors', 'pomodoro', 'settings', 'logs'];
+    this.tabs = ['dashboard', 'tasks', 'notes', 'deals', 'documents', 'gemini', 'groq', 'connectors', 'pomodoro', 'settings', 'logs'];
   }
 
   init() {
@@ -44,27 +44,26 @@ export class AppRouter {
 
     // Actualizar botones de navegación activos
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      const isTarget = btn.dataset.tab === tabName || 
-                      (tabName === 'gemini' && (btn.dataset.tab === 'groq' || btn.dataset.tab === 'gemini'));
-      btn.classList.toggle('active', isTarget);
+      const target = btn.dataset.tab;
+      const isMatch = target === tabName || (target === 'gemini' && (tabName === 'ai' || tabName === 'groq'));
+      btn.classList.toggle('active', Boolean(isMatch));
     });
 
-    // Ocultar todas las vistas y activar exclusivamente la vista seleccionada
-    document.querySelectorAll('.tab-view, .view-content').forEach(view => {
-      const isTargetView = view.id === `tab-${tabName}` || 
-                          (tabName === 'gemini' && (view.id === 'tab-gemini' || view.id === 'tab-groq'));
-      view.classList.toggle('active', isTargetView);
+    // Actualizar paneles visibles
+    document.querySelectorAll('.tab-view').forEach(view => {
+      const id = view.id.replace('tab-', '');
+      const isMatch = id === tabName || (id === 'gemini' && (tabName === 'ai' || tabName === 'groq'));
+      view.classList.toggle('active', Boolean(isMatch));
     });
 
-    // Cerrar sidebar en móviles
+    // Cerrar sidebar en móvil si está abierto
     const sidebar = document.getElementById('sidebar-nav');
     const overlay = document.getElementById('mobile-overlay');
     if (sidebar) sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('active');
+    if (overlay) overlay.classList.remove('open');
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    events.emit('router:navigate', tabName);
-    logger.debug('AppRouter', `Navegación a pestaña: ${tabName}`);
+    events.emit('router:navigated', tabName);
+    logger.debug('Router', `Navegado a la sección: ${tabName}`);
   }
 }
 

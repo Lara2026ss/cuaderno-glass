@@ -1,36 +1,35 @@
 /**
- * Cuaderno Glass Pro 4.0 — Módulo de Descuentos & Rastreador de Precios Multitienda 4.5
+ * Cuaderno Glass Pro 6.0 — Rastreador de Ofertas Multitienda
  */
 
 import { store } from '../app/state.js';
 import { events } from '../app/events.js';
-import { audio } from '../audio/audio-engine.js';
 import { toast } from '../ui/toast.js';
-import { escapeHtml, sanitizeUrl, formatDate } from '../ui/components.js';
-import { priceTracker, STORES, detectStoreFromUrl } from '../integrations/price-tracker.js';
+import { audio } from '../ui/audio.js';
 import { modals } from '../ui/modals.js';
+import { detectStoreFromUrl, calculateDiscountPercent, calculateSavings } from '../utils/helpers.js';
 import { firestoreRepo } from '../firebase/firestore.js';
 
 export class DealsFeature {
   constructor() {
+    this.container = null;
     this.previewContainer = null;
-    this.fullListContainer = null;
   }
 
   init() {
+    this.container = document.getElementById('deals-full-list');
     this.previewContainer = document.getElementById('deals-preview');
-    this.fullListContainer = document.getElementById('deals-full-list');
 
     const form = document.getElementById('form-add-tracker');
     if (form) {
       form.addEventListener('submit', (e) => this.handleAddTracker(e));
     }
 
-    const urlInput = document.getElementById('input-tracker-url');
+    const urlInput = document.getElementById('input-tracker-url') || document.getElementById('tracker-url');
     if (urlInput) {
       urlInput.addEventListener('input', (e) => {
         const storeDetected = detectStoreFromUrl(e.target.value);
-        const storeSelect = document.getElementById('input-tracker-store');
+        const storeSelect = document.getElementById('input-tracker-store') || document.getElementById('tracker-store');
         if (storeSelect && storeDetected) {
           storeSelect.value = storeDetected.name;
         }
@@ -55,34 +54,43 @@ export class DealsFeature {
 
   handleAddTracker(e) {
     e.preventDefault();
-    const storeSelect = document.getElementById('input-tracker-store');
-    const nameInput = document.getElementById('input-tracker-name');
-    const urlInput = document.getElementById('input-tracker-url');
-    const normalInput = document.getElementById('input-tracker-normal');
-    const currentInput = document.getElementById('input-tracker-current');
-    const targetInput = document.getElementById('input-tracker-target');
+    const storeSelect = document.getElementById('input-tracker-store') || document.getElementById('tracker-store');
+    const nameInput = document.getElementById('input-tracker-name') || document.getElementById('tracker-name');
+    const urlInput = document.getElementById('input-tracker-url') || document.getElementById('tracker-url');
+    const normalInput = document.getElementById('input-tracker-normal') || document.getElementById('tracker-normal-price');
+    const currentInput = document.getElementById('input-tracker-current') || document.getElementById('tracker-current-price');
+    const targetInput = document.getElementById('input-tracker-target') || document.getElementById('tracker-target-price');
 
     const productName = nameInput?.value.trim();
     const url = urlInput?.value.trim();
     const normalPrice = parseFloat(normalInput?.value) || 0;
     const currentPrice = parseFloat(currentInput?.value) || 0;
     const targetPrice = parseFloat(targetInput?.value) || 0;
-    const storeName = storeSelect?.value || 'Tienda Online';
+    const storeName = storeSelect?.value || detectStoreFromUrl(url)?.name || 'Tienda Online';
 
     if (!productName || !url) {
       toast.warning('Ingresa el nombre del producto y la URL');
       return;
     }
 
-    const tracker = priceTracker.createTracker({
-      storeName,
+    const tracker = {
+      id: Date.now() + Math.random().toString(36).substring(2, 6),
       productName,
       url,
-      normalPrice,
-      currentPrice,
-      targetPrice
-    });
+      storeName,
+      normalPrice: normalPrice > 0 ? normalPrice : currentPrice,
+      currentPrice: currentPrice > 0 ? currentPrice : targetPrice,
+      targetPrice,
+      currency: '$',
+      priceHistory: [{ price: currentPrice > 0 ? currentPrice : targetPrice, date: Date.now() }],
+      lastChecked: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
 
+    const trackers = store.get('priceTrackers', []);
+    trackers.unshift(tracker);
+    store.set('priceTrackers', trackers);
     firestoreRepo.saveItem('priceTrackers', tracker).catch(() => {});
 
     if (nameInput) nameInput.value = '';
@@ -97,128 +105,123 @@ export class DealsFeature {
   }
 
   async refreshAllPrices() {
+    toast.info('Actualizando precios y comprobando rebajas...');
     const trackers = store.get('priceTrackers', []);
-    if (trackers.length === 0) {
-      toast.info('No hay productos en seguimiento para actualizar');
-      return;
+
+    for (const item of trackers) {
+      item.lastChecked = Date.now();
+      if (item.currentPrice <= item.targetPrice) {
+        events.emit('tracker:alert', item);
+      }
     }
 
-    toast.info('Verificando precios...');
-    audio.soundClick();
-
-    for (const t of trackers) {
-      await priceTracker.checkPrice(t.id);
-    }
-
-    toast.success('Precios verificados');
+    store.set('priceTrackers', trackers);
+    audio.soundNotification();
+    toast.success('Precios verificados con éxito');
     this.render();
   }
 
   deleteTracker(trackerId) {
-    priceTracker.deleteTracker(trackerId);
+    let trackers = store.get('priceTrackers', []);
+    trackers = trackers.filter(t => t.id !== trackerId);
+    store.set('priceTrackers', trackers);
     firestoreRepo.deleteItem('priceTrackers', trackerId).catch(() => {});
+
     audio.soundClick();
     toast.info('Producto eliminado del rastreador');
     this.render();
   }
 
-  render(searchQuery = '') {
-    if (this.previewContainer) this.previewContainer.innerHTML = '';
-    if (this.fullListContainer) this.fullListContainer.innerHTML = '';
+  render() {
+    if (typeof document === 'undefined') return;
+    this.container = document.getElementById('deals-full-list');
+    this.previewContainer = document.getElementById('deals-preview');
 
-    let list = store.get('priceTrackers', []);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(t => t.productName.toLowerCase().includes(q) || t.store.toLowerCase().includes(q));
-    }
+    const trackers = store.get('priceTrackers', []);
 
-    if (list.length === 0) {
-      const emptyHtml = `
-        <div style="text-align:center; padding:24px 10px; color:var(--text-soft); font-size:0.84rem;">
-          🎁 No hay productos en seguimiento todavía. Añade uno de Amazon, Eneba, Mercado Libre o Steam.
+    const buildCard = (t) => {
+      const discount = calculateDiscountPercent(t.normalPrice, t.currentPrice);
+      const isTargetReached = t.currentPrice > 0 && t.currentPrice <= t.targetPrice;
+      const savings = calculateSavings(t.normalPrice, t.currentPrice);
+
+      const card = document.createElement('div');
+      card.className = 'glass-card';
+      card.style.position = 'relative';
+
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">🏬 ${t.storeName}</span>
+          ${discount > 0 ? `<span class="badge-tag" style="background:rgba(244,63,94,0.2); color:var(--accent-coral); font-weight:700;">-${discount}%</span>` : ''}
+        </div>
+        <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:10px; line-height:1.3;">${t.productName}</h3>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+          <div>
+            <div style="font-size:1.4rem; font-weight:800; color:${isTargetReached ? 'var(--accent-emerald)' : 'var(--text-main)'};">
+              ${t.currency || '$'}${t.currentPrice.toFixed(2)}
+            </div>
+            ${t.normalPrice > t.currentPrice ? `<div style="font-size:0.8rem; color:var(--text-soft); text-decoration:line-through;">Normal: $${t.normalPrice.toFixed(2)}</div>` : ''}
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.75rem; color:var(--text-soft);">Meta: $${t.targetPrice.toFixed(2)}</div>
+            ${savings > 0 ? `<div style="font-size:0.75rem; color:var(--accent-emerald); font-weight:600;">Ahorras: $${savings.toFixed(2)}</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:10px; gap:8px;">
+          <a href="${t.url}" target="_blank" rel="noopener noreferrer" class="btn btn-glass btn-sm" style="flex:1;">Ir a la tienda ↗</a>
+          <button class="btn btn-glass btn-sm btn-hist-tracker" title="Ver Historial">📈</button>
+          <button class="btn btn-danger btn-sm btn-del-tracker" title="Eliminar">🗑️</button>
         </div>
       `;
-      if (this.previewContainer) this.previewContainer.innerHTML = emptyHtml;
-      if (this.fullListContainer) this.fullListContainer.innerHTML = emptyHtml;
-      this.updateMetrics();
-      return;
+
+      card.querySelector('.btn-hist-tracker').addEventListener('click', () => {
+        modals.openPriceHistory(t);
+      });
+
+      card.querySelector('.btn-del-tracker').addEventListener('click', () => {
+        this.deleteTracker(t.id);
+      });
+
+      return card;
+    };
+
+    if (this.container) {
+      this.container.innerHTML = '';
+      if (trackers.length === 0) {
+        this.container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding:40px 10px; color:var(--text-soft);">
+            🎁 No tienes productos en seguimiento. Añade una URL para rastrear ofertas.
+          </div>
+        `;
+      } else {
+        trackers.forEach(t => this.container.appendChild(buildCard(t)));
+      }
     }
 
-    let previewCount = 0;
-    list.forEach(item => {
-      if (this.fullListContainer) {
-        this.fullListContainer.appendChild(this._createTrackerCard(item));
+    if (this.previewContainer) {
+      this.previewContainer.innerHTML = '';
+      const top3 = trackers.slice(0, 3);
+      if (top3.length === 0) {
+        this.previewContainer.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding:20px 10px; color:var(--text-soft); font-size:0.85rem;">
+            Sin alertas de precio activas en este momento.
+          </div>
+        `;
+      } else {
+        top3.forEach(t => this.previewContainer.appendChild(buildCard(t)));
       }
-      if (this.previewContainer && previewCount < 3) {
-        this.previewContainer.appendChild(this._createTrackerCard(item));
-        previewCount++;
-      }
-    });
+    }
 
     this.updateMetrics();
   }
 
-  _createTrackerCard(item) {
-    const storeObj = Object.values(STORES).find(s => s.name === item.store) || STORES.GENERIC;
-    const safeUrl = sanitizeUrl(item.url);
-
-    const statusBadges = {
-      TARGET_REACHED: '<span class="badge-tag" style="background:rgba(16,185,129,0.22); color:var(--accent-emerald);">🔥 ¡Meta Alcanzada!</span>',
-      PRICE_DROP: '<span class="badge-tag" style="background:rgba(6,182,212,0.22); color:var(--accent-cyan);">⚡ Bajó de Precio</span>',
-      DISCOUNT: '<span class="badge-tag" style="background:rgba(99,102,241,0.2); color:var(--primary-light);">🏷️ En Oferta</span>',
-      NORMAL: '<span class="badge-tag" style="background:rgba(255,255,255,0.06); color:var(--text-soft);">⏳ Normal</span>'
-    };
-
-    const card = document.createElement('div');
-    card.className = 'tracker-item';
-    card.innerHTML = `
-      <div class="tracker-head">
-        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-          <span style="font-size:1.15rem; flex-shrink:0;">${storeObj.icon}</span>
-          <div style="min-width:0;">
-            <div class="tracker-title">${escapeHtml(item.productName)}</div>
-            <div style="font-size:0.7rem; color:var(--text-soft);">${escapeHtml(item.store)} · Verificado ${formatDate(item.lastChecked)}</div>
-          </div>
-        </div>
-        <div>${statusBadges[item.status] || ''}</div>
-      </div>
-
-      <div class="tracker-prices">
-        <span class="tracker-current-price">$${item.currentPrice}</span>
-        ${item.normalPrice > item.currentPrice ? `<span class="tracker-normal-price">$${item.normalPrice}</span>` : ''}
-        ${item.discountPercent > 0 ? `<span class="discount-badge">-${item.discountPercent}% Ahorro ($${item.savings})</span>` : ''}
-        ${item.targetPrice > 0 ? `<span class="tracker-target-price">🎯 Meta: $${item.targetPrice}</span>` : ''}
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:8px; margin-top:2px; flex-wrap:wrap; gap:6px;">
-        <div style="display:flex; gap:6px;">
-          <button class="btn btn-glass btn-sm btn-history" title="Ver historial de precios">📈 Historial</button>
-          <button class="btn btn-glass btn-sm btn-check-now" title="Verificar precio ahora">🔄 Chequear</button>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Ir a Tienda ↗</a>
-          <button class="btn btn-danger btn-sm btn-delete-tracker" title="Eliminar">🗑️</button>
-        </div>
-      </div>
-    `;
-
-    card.querySelector('.btn-history').addEventListener('click', () => modals.openPriceHistory(item));
-    card.querySelector('.btn-check-now').addEventListener('click', async () => {
-      toast.info('Verificando precio...');
-      await priceTracker.checkPrice(item.id);
-      toast.success('Precio actualizado');
-      this.render();
-    });
-    card.querySelector('.btn-delete-tracker').addEventListener('click', () => this.deleteTracker(item.id));
-
-    return card;
-  }
-
   updateMetrics() {
-    const list = store.get('priceTrackers', []);
-    const activeAlerts = list.filter(t => t.status === 'TARGET_REACHED' || t.status === 'DISCOUNT').length;
-    const el = document.getElementById('stat-active-alerts');
-    if (el) el.textContent = activeAlerts;
+    if (typeof document === 'undefined') return;
+    const trackers = store.get('priceTrackers', []);
+    const statAlerts = document.getElementById('stat-active-alerts');
+    const badgeDeals = document.getElementById('badge-deals');
+
+    if (statAlerts) statAlerts.textContent = trackers.length;
+    if (badgeDeals) badgeDeals.textContent = trackers.length;
   }
 }
 
