@@ -116,7 +116,7 @@ export class FirebaseAuthService {
     store.set('user', null);
     store.set('session.isAuthenticated', false);
     store.set('session.idToken', null);
-    store.set('connections.firebase.status', 'disconnected');
+    store.set('connections.firebase.status', 'connected');
     store.set('connections.firebase.authStatus', 'guest');
     events.emit('auth:user-signed-out');
   }
