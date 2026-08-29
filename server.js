@@ -68,8 +68,9 @@ function logServerEvent(level, component, message, details = null) {
   SERVER_LOGS.unshift(entry);
   if (SERVER_LOGS.length > 150) SERVER_LOGS.pop();
 
+  const icon = level === 'error' ? '🔴' : level === 'warn' ? '🟡' : '🟢';
   const detailsStr = details ? ` | ${JSON.stringify(details)}` : '';
-  console.log(`[${entry.timestamp}] [${level.toUpperCase()}] [${component}] ${message}${detailsStr}`);
+  console.log(`${icon} [${entry.timestamp}] [${level.toUpperCase()}] [${component}] ${message}${detailsStr}`);
   return entry;
 }
 
@@ -415,11 +416,21 @@ process.on('unhandledRejection', (reason) => {
 // Iniciar servidor si se ejecuta directamente
 if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   app.listen(PORT, () => {
-    console.log(`\n======================================================`);
-    console.log(`🚀 CUADERNO GLASS PRO 7.0 SERVER`);
-    console.log(`🌐 Servidor escuchando en: http://localhost:${PORT}`);
-    console.log(`🔒 Modo seguro activo • SSRF Protection • Groq AI Copilot`);
-    console.log(`======================================================\n`);
+    const fbStatus = firebaseAdminInitialized ? '🟢 ONLINE (Service Account Loaded)' : '🟡 DEGRADADO (Client Config Fallback)';
+    const groqStatus = process.env.GROQ_API_KEY ? '🟢 CONFIGURADO (Groq Llama 3.3 70B)' : '🔴 NO CONFIGURADO';
+
+    console.log(`
+┌────────────────────────────────────────────────────────────────────────┐
+│  🚀 CUADERNO GLASS PRO 7.0 — SERVIDOR EN LÍNEA & CLOUD HUB BACKEND     │
+├────────────────────────────────────────────────────────────────────────┤
+│  🌐 Puerto Servidor   : ${PORT}                                       │
+│  🔥 Firebase Admin SDK: ${fbStatus}             │
+│  ⚡ Copilot AI Engine : ${groqStatus}            │
+│  🛡️ Protección SSRF   : 🟢 ACTIVA (Dominios Verificados)               │
+│  📊 Endpoint Telemetría: /api/logs                                     │
+└────────────────────────────────────────────────────────────────────────┘
+    `);
+    logServerEvent('info', 'System', 'Servidor de Cuaderno Glass Pro 7.0 inicializado con éxito en Render');
     startPriceMonitoringWorker();
   });
 }
