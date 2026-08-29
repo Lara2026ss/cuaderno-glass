@@ -22,9 +22,13 @@ class AccessGate {
     this.errorEl = null;
     this.unlocked = false;
     this.wasAuthenticated = false;
+    this.initialized = false;
   }
 
   init() {
+    if (this.initialized) return;
+    this.initialized = true;
+
     this.gateEl = document.getElementById('access-gate');
     this.shellEl = document.getElementById('app-shell');
     this.statusEl = document.getElementById('access-gate-status');
@@ -36,6 +40,7 @@ class AccessGate {
     if (this.btnEl) {
       this.btnEl.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this._handleLoginClick();
       });
     }
@@ -43,11 +48,12 @@ class AccessGate {
     if (this.btnGuestEl) {
       this.btnGuestEl.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this._unlock();
       });
     }
 
-    // Solo relockear si existía una sesión autenticada real que se cerró
+    // Solo relockear si existía una sesión autenticada real que se cerró explícitamente
     events.on('auth:user-signed-out', () => {
       if (this.wasAuthenticated) {
         this.wasAuthenticated = false;
@@ -64,6 +70,8 @@ class AccessGate {
   }
 
   async _checkSession() {
+    this._setStatus('Comprobando sesión...', true);
+
     try {
       await Promise.race([
         authService.init(),
@@ -84,9 +92,10 @@ class AccessGate {
 
   async _handleLoginClick() {
     this._hideError();
-    if (this.btnEl) this.btnEl.disabled = true;
     this._setStatus('Abriendo ventana de Google...', true);
     this._showStatus();
+    if (this.btnEl) this.btnEl.disabled = true;
+    if (this.btnGuestEl) this.btnGuestEl.disabled = true;
 
     try {
       const user = await authService.signInWithGoogle();
@@ -102,6 +111,7 @@ class AccessGate {
       this._showLoginButton();
     } finally {
       if (this.btnEl) this.btnEl.disabled = false;
+      if (this.btnGuestEl) this.btnGuestEl.disabled = false;
     }
   }
 
@@ -109,7 +119,7 @@ class AccessGate {
     if (err && err.code === 'auth/unauthorized-domain') {
       return `Este dominio (${window.location.hostname}) no está autorizado en Firebase. Ve a Firebase Console → Authentication → Settings → Authorized domains y agrégalo.`;
     }
-    return (err && err.friendlyMessage) || (err && err.message) || 'No se pudo iniciar sesión con Google. Intenta de nuevo.';
+    return (err && err.friendlyMessage) || (err && err.message) || 'No se pudo iniciar sesión con Google. Intenta de nuevo o entra en Modo Visitante.';
   }
 
   _showLoginButton() {
@@ -155,7 +165,7 @@ class AccessGate {
       this.gateEl.style.opacity = '0';
       this.gateEl.style.pointerEvents = 'none';
     }
-    if (this.shellEl) this.shellEl.style.display = '';
+    if (this.shellEl) this.shellEl.style.display = 'flex';
 
     setTimeout(() => {
       if (this.gateEl) this.gateEl.style.display = 'none';
