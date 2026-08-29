@@ -92,6 +92,15 @@ app.get(['/', '/index.html'], (req, res) => {
 app.use(express.static(__dirname));
 app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
+// SPA Fallback: redirigir cualquier otra ruta no capturada a cuaderno.html
+app.get('*', (req, res) => {
+  // Ignorar llamadas a la API que no existen
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint no encontrado' });
+  }
+  res.sendFile(path.join(__dirname, 'dist', 'cuaderno.html'));
+});
+
 // Middleware de autenticación con Firebase Token
 async function verifyAuthToken(req, res, next) {
   const authHeader = req.headers.authorization;

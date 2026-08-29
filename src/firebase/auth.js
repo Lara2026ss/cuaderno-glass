@@ -29,7 +29,14 @@ export class FirebaseAuthService {
     this.lastError = null;
   }
 
-  async init() {
+  init() {
+    if (this.initialized) return Promise.resolve();
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this._initImpl();
+    return this.initPromise;
+  }
+
+  async _initImpl() {
     this.checkingSession = true;
     store.set('session.isChecking', true);
 

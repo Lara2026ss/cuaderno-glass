@@ -46,11 +46,10 @@ class AccessGate {
       this.btnGuestEl.addEventListener('click', () => this._unlock());
     }
 
-    // Si el usuario cierra sesión desde dentro de la app, regresar al portón.
+    // Eliminado: no relockear al portón automáticamente para permitir modo visitante sin interrupciones
     events.on('auth:user-signed-out', () => {
-      if (this.unlocked) {
-        this._relock();
-      }
+      // Si el usuario cierra sesión explícitamente, puede seguir en modo visitante en la app.
+      // this._relock(); 
     });
 
     events.on('auth:user-signed-in', () => {

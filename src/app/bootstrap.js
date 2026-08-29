@@ -43,10 +43,11 @@ class AppBootstrap {
     this._setupFeatures();
     this._setupGlobalUI();
     this._setupAuthUI();
+    this._setupServiceWorker();
     this._setupModals();
 
-    audio.soundStart();
-    logger.info('Bootstrap', 'Cuaderno Glass Pro 7.0 iniciado con éxito.');
+    audio.soundSuccess();
+    logger.info('Bootstrap', 'APP_READY', { message: 'Cuaderno Glass Pro 7.0 iniciado con éxito.' });
   }
 
   _setupGlobalErrorHandling() {
@@ -86,6 +87,18 @@ class AppBootstrap {
   _setupRouter() {
     this.router = new AppRouter('dashboard');
     this.router.init();
+  }
+
+  _setupServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          logger.info('Bootstrap', 'SERVICE_WORKER_INIT', { scope: reg.scope });
+        })
+        .catch(err => {
+          logger.error('Bootstrap', 'SERVICE_WORKER_ERROR', { error: err.message });
+        });
+    }
   }
 
   async _setupFirebase() {

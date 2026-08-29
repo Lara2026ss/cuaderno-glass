@@ -144,7 +144,8 @@ export class FirestoreRepository {
           events.emit(`firestore:${collectionName}:synced`, items);
         },
         err => {
-          logger.warn('Firestore', `Listener degradado en ${collectionName}: ${err.message}`);
+          logger.error('Firestore', `Error crítico o listener degradado en ${collectionName}: ${err.message}`);
+          store.set('connections.firebase.error', `Error sincronizando ${collectionName}: ${err.message}`);
         }
       );
 
