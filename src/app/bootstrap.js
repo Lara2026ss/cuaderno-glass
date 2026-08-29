@@ -1,5 +1,5 @@
 /**
- * Cuaderno Glass Pro 6.0 — Bootstrap Principal y Orquestador Modular
+ * Cuaderno Glass Pro 7.0 – Bootstrap Principal y Orquestador Modular
  */
 
 import { store } from './state.js';
@@ -33,7 +33,7 @@ class AppBootstrap {
     if (this.initialized) return;
     this.initialized = true;
 
-    logger.info('Bootstrap', 'Iniciando Cuaderno Glass Pro 6.0...');
+    logger.info('Bootstrap', 'Iniciando Cuaderno Glass Pro 7.0...');
 
     this._setupGlobalErrorHandling();
     this._setupTheme();
@@ -46,7 +46,7 @@ class AppBootstrap {
     this._setupModals();
 
     audio.soundStart();
-    logger.info('Bootstrap', 'Cuaderno Glass Pro 6.0 iniciado con éxito.');
+    logger.info('Bootstrap', 'Cuaderno Glass Pro 7.0 iniciado con éxito.');
   }
 
   _setupGlobalErrorHandling() {
@@ -89,16 +89,20 @@ class AppBootstrap {
   }
 
   async _setupFirebase() {
-    const config = store.get('settings.firebaseConfig');
-    if (config && config.apiKey) {
-      try {
-        initializeFirebaseApp(config);
-        await authService.init();
-      } catch (err) {
-        logger.warn('Bootstrap', 'Firebase no pudo inicializarse con la configuración guardada', err);
-      }
-    } else {
-      logger.info('Bootstrap', 'Operando en Modo Local / Demo (sin Firebase)');
+    const explicitLocalMode = store.get('settings.firebaseConfig.apiKey') === 'local-mode-no-key';
+    if (explicitLocalMode) {
+      logger.info('Bootstrap', 'Modo Local forzado activo: Firebase deshabilitado.');
+      return;
+    }
+
+    try {
+      // Siempre intentar cargar la config del servidor o usar la default
+      await fetchServerFirebaseConfig();
+      initializeFirebaseApp();
+      await authService.init();
+      logger.info('Bootstrap', 'Firebase Auth inicializado en arranque.');
+    } catch (err) {
+      logger.warn('Bootstrap', 'Firebase no pudo inicializarse en arranque', { error: err.message });
     }
   }
 
