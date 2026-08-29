@@ -32,6 +32,7 @@ class AccessGate {
     this.statusEl = document.getElementById('access-gate-status');
     this.statusTextEl = document.getElementById('access-gate-status-text');
     this.btnEl = document.getElementById('btn-gate-google-auth');
+    this.btnGuestEl = document.getElementById('btn-gate-guest');
     this.errorEl = document.getElementById('access-gate-error');
 
     if (!this.gateEl || !this.shellEl) {
@@ -42,6 +43,10 @@ class AccessGate {
 
     if (this.btnEl) {
       this.btnEl.addEventListener('click', () => this._handleLoginClick());
+    }
+
+    if (this.btnGuestEl) {
+      this.btnGuestEl.addEventListener('click', () => this._unlock());
     }
 
     // Si el usuario cierra sesión desde dentro de la app, regresar al portón.
@@ -79,7 +84,7 @@ class AccessGate {
     }
   }
 
-  _waitForSessionCheck(timeoutMs = 8000) {
+  _waitForSessionCheck(timeoutMs = 1500) {
     return new Promise((resolve) => {
       const start = Date.now();
       const poll = () => {
@@ -88,7 +93,7 @@ class AccessGate {
           return;
         }
         if (Date.now() - start > timeoutMs) {
-          logger.warn('AccessGate', 'Tiempo de espera agotado comprobando la sesión; se muestra el botón de login.');
+          logger.warn('AccessGate', 'Tiempo de espera agotado comprobando la sesión; se muestran botones de acceso.');
           resolve();
           return;
         }
@@ -100,10 +105,11 @@ class AccessGate {
 
   async _handleLoginClick() {
     this._hideError();
-    this.btnEl.disabled = true;
+    if (this.btnEl) this.btnEl.disabled = true;
     this._setStatus('Abriendo ventana de Google...', true);
     this._showStatus();
-    this.btnEl.style.display = 'none';
+    if (this.btnEl) this.btnEl.style.display = 'none';
+    if (this.btnGuestEl) this.btnGuestEl.style.display = 'none';
 
     try {
       const user = await authService.signInWithGoogle();
@@ -119,7 +125,7 @@ class AccessGate {
       this._showError(this._describeError(err));
       this._showLoginButton();
     } finally {
-      this.btnEl.disabled = false;
+      if (this.btnEl) this.btnEl.disabled = false;
     }
   }
 
@@ -133,6 +139,7 @@ class AccessGate {
   _showLoginButton() {
     this._hideStatus();
     if (this.btnEl) this.btnEl.style.display = 'flex';
+    if (this.btnGuestEl) this.btnGuestEl.style.display = 'flex';
   }
 
   _setStatus(text) {

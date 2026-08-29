@@ -50,14 +50,20 @@
         <span id="access-gate-status-text">Comprobando sesión...</span>
       </div>
 
-      <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:none;">
-        <span style="font-size: 1.1rem;">🇬</span>
-        <span>Entrar con Google</span>
-      </button>
+      <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+        <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:none;">
+          <span style="font-size: 1.1rem;">🌐</span>
+          <span>Entrar con Google</span>
+        </button>
 
-      <div id="access-gate-error" class="access-gate-error" style="display:none;"></div>
+        <button class="btn btn-glass btn-full" id="btn-gate-guest" style="display:none; font-size:0.85rem; padding: 10px;">
+          <span>⚡ Continuar como Visitante / Modo Local</span>
+        </button>
+      </div>
 
-      <div class="access-gate-footnote">Solo tu cuenta puede entrar aquí. Nadie más tiene acceso a este cuaderno.</div>
+      <div id="access-gate-error" class="access-gate-error" style="display:none; margin-top:10px;"></div>
+
+      <div class="access-gate-footnote" style="margin-top:12px;">Solo tu cuenta puede sincronizar datos en la nube. Puedes usar la app en modo local sin iniciar sesión.</div>
     </div>
   </div>
 
