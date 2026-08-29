@@ -21,6 +21,7 @@ class AccessGate {
     this.btnGuestEl = null;
     this.errorEl = null;
     this.unlocked = false;
+    this.wasAuthenticated = false;
   }
 
   init() {
@@ -33,18 +34,29 @@ class AccessGate {
     this.errorEl = document.getElementById('access-gate-error');
 
     if (this.btnEl) {
-      this.btnEl.addEventListener('click', () => this._handleLoginClick());
+      this.btnEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        this._handleLoginClick();
+      });
     }
 
     if (this.btnGuestEl) {
-      this.btnGuestEl.addEventListener('click', () => this._unlock());
+      this.btnGuestEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        this._unlock();
+      });
     }
 
+    // Solo relockear si existía una sesión autenticada real que se cerró
     events.on('auth:user-signed-out', () => {
-      this._relock();
+      if (this.wasAuthenticated) {
+        this.wasAuthenticated = false;
+        this._relock();
+      }
     });
 
-    events.on('auth:user-signed-in', () => {
+    events.on('auth:user-signed-in', (user) => {
+      if (user) this.wasAuthenticated = true;
       this._unlock();
     });
 
@@ -53,7 +65,6 @@ class AccessGate {
 
   async _checkSession() {
     try {
-      // Iniciar chequeo no-bloqueante de sesión con timeout de 800ms
       await Promise.race([
         authService.init(),
         new Promise((resolve) => setTimeout(resolve, 800))
@@ -62,6 +73,7 @@ class AccessGate {
       logger.warn('AccessGate', 'Excepción comprobando sesión:', { error: err.message });
     } finally {
       if (authService.currentUser) {
+        this.wasAuthenticated = true;
         logger.info('AccessGate', `Sesión existente detectada: ${authService.currentUser.email}. Entrando automáticamente.`);
         this._unlock();
       } else {
@@ -75,12 +87,11 @@ class AccessGate {
     if (this.btnEl) this.btnEl.disabled = true;
     this._setStatus('Abriendo ventana de Google...', true);
     this._showStatus();
-    if (this.btnEl) this.btnEl.style.display = 'none';
-    if (this.btnGuestEl) this.btnGuestEl.style.display = 'none';
 
     try {
       const user = await authService.signInWithGoogle();
       if (user) {
+        this.wasAuthenticated = true;
         this._unlock();
       } else {
         this._setStatus('Redirigiendo a Google...', true);
@@ -103,8 +114,14 @@ class AccessGate {
 
   _showLoginButton() {
     this._hideStatus();
-    if (this.btnEl) this.btnEl.style.display = 'flex';
-    if (this.btnGuestEl) this.btnGuestEl.style.display = 'flex';
+    if (this.btnEl) {
+      this.btnEl.style.display = 'flex';
+      this.btnEl.disabled = false;
+    }
+    if (this.btnGuestEl) {
+      this.btnGuestEl.style.display = 'flex';
+      this.btnGuestEl.disabled = false;
+    }
   }
 
   _setStatus(text) {
