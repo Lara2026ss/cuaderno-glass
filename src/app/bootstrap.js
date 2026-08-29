@@ -13,7 +13,7 @@ import { AppRouter } from './router.js';
 import { initializeFirebaseApp, fetchServerFirebaseConfig } from '../firebase/config.js';
 import { authService } from '../firebase/auth.js';
 import { firestoreRepo } from '../firebase/firestore.js';
-import { dataSyncManager } from '../firebase/sync.js';
+import { synchronizer } from '../firebase/sync.js';
 
 import { tasksFeature } from '../features/tasks.js';
 import { notesFeature } from '../features/notes.js';
@@ -95,6 +95,10 @@ class AppBootstrap {
       if (!authService.initialized) {
         await authService.init();
       }
+      // Arrancar el sincronizador: escucha online/offline y suscribe
+      // las colecciones de Firestore en cuanto haya sesión de Google.
+      // Sin esto la nube nunca llega a conectarse tras el login.
+      synchronizer.init();
       store.set('connections.firebase.status', 'connected');
       store.set('connections.firebase.error', null);
       logger.info('Bootstrap', 'Firebase Cloud listo y conectado desde el arranque.');
@@ -180,18 +184,13 @@ class AppBootstrap {
 
     updateProfileUI();
 
-    events.on('auth:changed', () => {
-      updateProfileUI();
-      this._renderConnectorsView();
-    });
-
-    events.on('auth:login', (u) => {
+    events.on('auth:user-signed-in', (u) => {
       updateProfileUI();
       this._renderConnectorsView();
       toast.success(`Bienvenido, ${u.displayName || u.email}`);
     });
 
-    events.on('auth:logout', () => {
+    events.on('auth:user-signed-out', () => {
       updateProfileUI();
       this._renderConnectorsView();
       toast.info('Sesión cerrada');
@@ -253,7 +252,12 @@ class AppBootstrap {
       btnConfirmMigrate.addEventListener('click', async () => {
         btnConfirmMigrate.disabled = true;
         btnConfirmMigrate.textContent = 'Migrando datos...';
-        await dataSyncManager.confirmPendingMigration();
+        try {
+          await synchronizer.migrateLocalToCloud();
+          toast.success('Datos migrados a la nube correctamente');
+        } catch (err) {
+          toast.error('Error migrando datos a la nube');
+        }
         btnConfirmMigrate.disabled = false;
         btnConfirmMigrate.textContent = 'Migrar a Mi Cuenta Cloud';
         modals.close();

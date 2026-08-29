@@ -7,7 +7,7 @@ import { events } from '../app/events.js';
 import { toast } from '../ui/toast.js';
 import { audio } from '../audio/audio-engine.js';
 import { modals } from '../ui/modals.js';
-import { detectStoreFromUrl, calculateDiscountPercent, calculateSavings } from '../integrations/price-tracker.js';
+import { detectStoreFromUrl, calculateDiscountMetrics } from '../integrations/price-tracker.js';
 import { firestoreRepo } from '../firebase/firestore.js';
 
 export class DealsFeature {
@@ -140,9 +140,8 @@ export class DealsFeature {
     const trackers = store.get('priceTrackers', []);
 
     const buildCard = (t) => {
-      const discount = calculateDiscountPercent(t.normalPrice, t.currentPrice);
+      const { discountPercent: discount, savings } = calculateDiscountMetrics(t.normalPrice, t.currentPrice);
       const isTargetReached = t.currentPrice > 0 && t.currentPrice <= t.targetPrice;
-      const savings = calculateSavings(t.normalPrice, t.currentPrice);
 
       const card = document.createElement('div');
       card.className = 'glass-card';
