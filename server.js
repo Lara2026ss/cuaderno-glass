@@ -107,8 +107,9 @@ app.get('/api/firebase/config', (req, res) => {
   res.json({
     projectId: process.env.FIREBASE_PROJECT_ID || 'alero-company-works',
     authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'alero-company-works.firebaseapp.com',
-    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyBt9QyS8e9q6m-xY7rV8t1W3n4o5p6q7r8s',
+    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyBt9pqBxcSOWVSm7fSBJtYSmmPgrb8A_rU',
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'alero-company-works.firebasestorage.app',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '16044531269',
     appId: process.env.FIREBASE_APP_ID || '1:16044531269:web:431da21bd13952050d8d2c'
   });
 });
