@@ -56,6 +56,7 @@ export async function fetchServerFirebaseConfig() {
 
 export function isValidFirebaseConfig(config) {
   if (!config || typeof config !== 'object') return false;
+  if (config.apiKey === 'local-mode-no-key') return false;
   return typeof config.projectId === 'string' && config.projectId.trim().length > 0 && typeof config.apiKey === 'string' && config.apiKey.trim().length > 0;
 }
 

@@ -89,12 +89,6 @@ class AppBootstrap {
   }
 
   async _setupFirebase() {
-    const explicitLocalMode = store.get('settings.firebaseConfig.apiKey') === 'local-mode-no-key';
-    if (explicitLocalMode) {
-      logger.info('Bootstrap', 'Modo Local forzado activo: Firebase deshabilitado.');
-      return;
-    }
-
     try {
       // Siempre intentar cargar la config del servidor o usar la default
       await fetchServerFirebaseConfig();
@@ -161,8 +155,6 @@ class AppBootstrap {
 
     const updateProfileUI = () => {
       const user = store.get('user');
-      const fbConfig = store.get('settings.firebaseConfig');
-      const isLocal = fbConfig && fbConfig.apiKey === 'local-mode-no-key';
       
       if (user) {
         if (userName) userName.textContent = user.displayName || 'Usuario Google';
@@ -174,11 +166,11 @@ class AppBootstrap {
         }
         if (authText) authText.textContent = 'Cerrar Sesión';
       } else {
-        if (userName) userName.textContent = isLocal ? 'Modo Local / Demo' : 'Modo Visitante';
-        if (userEmail) userEmail.textContent = isLocal ? 'Sin conexión cloud' : 'Sincroniza tus datos';
+        if (userName) userName.textContent = 'Modo Visitante';
+        if (userEmail) userEmail.textContent = 'Sincroniza tus datos';
         if (avatarImg) avatarImg.innerHTML = '👤';
         if (authText) {
-          authText.textContent = isLocal ? 'Modo Local (Forzado)' : 'Iniciar Sesión con Google';
+          authText.textContent = 'Iniciar Sesión con Google';
         }
       }
     };
@@ -199,14 +191,13 @@ class AppBootstrap {
     events.on('auth:logout', () => {
       updateProfileUI();
       this._renderConnectorsView();
-      toast.info('SesiÃ³n cerrada');
+      toast.info('Sesión cerrada');
     });
 
     if (authBtn) {
       authBtn.addEventListener('click', async () => {
         audio.soundClick();
         const user = store.get('user');
-        const hasApiKey = !!store.get('settings.firebaseConfig.apiKey');
 
         if (user) {
           try {
@@ -215,14 +206,6 @@ class AppBootstrap {
             toast.error('Error al cerrar sesión');
           }
         } else {
-          // Si el usuario forzó explícitamente el modo local
-          const fbConfig = store.get('settings.firebaseConfig');
-          if (fbConfig && fbConfig.apiKey === 'local-mode-no-key') {
-            toast.info('Estás en Modo Local forzado. Para usar la nube, carga el Preset Recomendado en Ajustes.');
-            modals.open('modal-settings');
-            return;
-          }
-
           try {
             authBtn.disabled = true;
             if (authText) authText.textContent = 'Abriendo Google...';
