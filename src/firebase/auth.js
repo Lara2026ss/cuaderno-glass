@@ -56,6 +56,18 @@ export class FirebaseAuthService {
         logger.debug('FirebaseAuth', 'Persistence notice:', pErr.message);
       }
 
+      // Procesar resultado de redirección si lo hay
+      if (typeof this.auth.getRedirectResult === 'function') {
+        try {
+          const redirectRes = await this.auth.getRedirectResult();
+          if (redirectRes && redirectRes.user) {
+            logger.info('FirebaseAuth', 'Login completado vía Redirección de Google');
+          }
+        } catch (rErr) {
+          logger.warn('FirebaseAuth', 'Error en resultado de redirección:', rErr.message);
+        }
+      }
+
       this.auth.onAuthStateChanged(async (user) => {
         this.checkingSession = false;
         store.set('session.isChecking', false);
@@ -212,10 +224,22 @@ export class FirebaseAuthService {
     }
 
     try {
-      logger.info('FirebaseAuth', 'Iniciando popup de Google Sign-In...');
+      logger.info('FirebaseAuth', 'Iniciando autenticación de Google...');
       const provider = this.createGoogleProvider();
       
-      const result = await this.auth.signInWithPopup(provider);
+      let result;
+      try {
+        result = await this.auth.signInWithPopup(provider);
+      } catch (popupErr) {
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request' || popupErr.code === 'auth/popup-closed-by-user') {
+          logger.info('FirebaseAuth', 'Popup bloqueado/cancelado. Redirigiendo a Google Auth...');
+          await this.auth.signInWithRedirect(provider);
+          return null;
+        }
+        throw popupErr;
+      }
+
+      if (!result || !result.user) return null;
       const idToken = await result.user.getIdToken();
       
       this.currentUser = {

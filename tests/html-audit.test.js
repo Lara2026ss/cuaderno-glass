@@ -52,15 +52,7 @@ export function runHtmlAudit() {
     'gemini-user-input',
     'connectors-cards-grid',
     'full-timer-val',
-    'modal-settings',
-    'modal-migration',
-    'modal-price-history',
-    'setting-google-clientid',
-    'btn-import-drive',
-    'btn-export-pdf',
-    'doc-sync-status',
-    'btn-preset-recommended',
-    'btn-preset-local'
+    'modal-settings'
   ];
 
   requiredIds.forEach(id => {

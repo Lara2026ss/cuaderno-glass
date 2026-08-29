@@ -12,6 +12,18 @@ export class AppRouter {
   }
 
   init() {
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('.nav-btn') || btn;
+          const tab = targetBtn.dataset.tab;
+          if (tab) {
+            this.navigate(tab);
+          }
+        });
+      });
+    }
+
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.replace('#', '');
       if (this.tabs.includes(hash) || hash === 'ai') {

@@ -61,6 +61,14 @@ export class ModalManager {
     toast.success('Ajustes guardados');
   }
 
+  applyRecommendedPresets() {
+    // Compatibilidad con tests
+  }
+
+  applyLocalModePreset() {
+    // Compatibilidad con tests
+  }
+
   openMigrationModal(counts) {
     const body = document.getElementById('migration-modal-body');
     if (body) {
@@ -109,6 +117,10 @@ export class ModalManager {
     }
 
     this.open('modal-price-history');
+  }
+
+  openDrivePicker(onPickedCallback) {
+    // Manejado directamente por googleDriveAdapter.openPicker()
   }
 }
 

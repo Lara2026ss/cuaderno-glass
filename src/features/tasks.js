@@ -27,8 +27,9 @@ export class TasksFeature {
 
     // Soporte para chips de filtro de categoría (en vista de tareas o dashboard)
     document.querySelectorAll('.task-category-chip, #task-filter-chips .chip, .task-filter-chips .chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const cat = chip.dataset.cat || 'all';
+      chip.addEventListener('click', (e) => {
+        const targetChip = e.target.closest('.chip, .task-category-chip') || chip;
+        const cat = targetChip.dataset.cat || 'all';
         this.setCategory(cat);
       });
     });
@@ -47,7 +48,8 @@ export class TasksFeature {
 
     if (typeof document !== 'undefined') {
       document.querySelectorAll('.task-category-chip, #task-filter-chips .chip, .task-filter-chips .chip').forEach(c => {
-        c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
+        const cCat = c.dataset.cat || 'all';
+        c.classList.toggle('active', cCat.toLowerCase() === cat.toLowerCase());
       });
       
       const catSelect = document.getElementById('task-category-select');
@@ -139,8 +141,8 @@ export class TasksFeature {
     this.dashboardContainer = document.getElementById('dashboard-tasks-container');
 
     let list = store.get('tasks', []);
-    if (this.activeCategory !== 'all') {
-      list = list.filter(t => t.category === this.activeCategory);
+    if (this.activeCategory && this.activeCategory !== 'all') {
+      list = list.filter(t => (t.category || '').trim().toLowerCase() === this.activeCategory.trim().toLowerCase());
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();

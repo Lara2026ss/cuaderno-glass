@@ -230,9 +230,6 @@ class AppBootstrap {
           } catch (err) {
             logger.error('AppBootstrap', 'Error de Auth', { error: err.message });
             toast.error(err.friendlyMessage || 'Error al iniciar sesión con Google');
-            if (err.isConfigError) {
-              modals.open('modal-settings');
-            }
           } finally {
             authBtn.disabled = false;
             updateProfileUI();

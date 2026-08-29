@@ -92,8 +92,9 @@ export class DocumentsFeature {
     }
 
     document.querySelectorAll('#doc-category-chips .chip, #tab-documents .filter-chips .chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const cat = chip.dataset.cat || 'all';
+      chip.addEventListener('click', (e) => {
+        const targetChip = e.target.closest('.chip') || chip;
+        const cat = targetChip.dataset.cat || 'all';
         this.setCategory(cat);
       });
     });
@@ -112,7 +113,8 @@ export class DocumentsFeature {
 
     if (typeof document !== 'undefined') {
       document.querySelectorAll('#doc-category-chips .chip, #tab-documents .filter-chips .chip').forEach(c => {
-        c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
+        const cCat = c.dataset.cat || 'all';
+        c.classList.toggle('active', cCat.toLowerCase() === cat.toLowerCase());
       });
 
       const catSelect = document.getElementById('editor-doc-category');
@@ -413,8 +415,8 @@ export class DocumentsFeature {
     this.container.innerHTML = '';
 
     let list = store.get('documents', []);
-    if (this.activeCategory !== 'all') {
-      list = list.filter(d => d.category === this.activeCategory);
+    if (this.activeCategory && this.activeCategory !== 'all') {
+      list = list.filter(d => (d.category || '').trim().toLowerCase() === this.activeCategory.trim().toLowerCase());
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
