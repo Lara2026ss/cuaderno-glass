@@ -52,42 +52,22 @@ class AccessGate {
   }
 
   async _checkSession() {
-    this._setStatus('Comprobando sesión de Google...', true);
-    this._showStatus();
-
     try {
-      await authService.init();
+      // Iniciar chequeo no-bloqueante de sesión con timeout de 800ms
+      await Promise.race([
+        authService.init(),
+        new Promise((resolve) => setTimeout(resolve, 800))
+      ]);
     } catch (err) {
-      logger.error('AccessGate', 'Error inicializando Firebase Auth en el portón', { error: err.message });
+      logger.warn('AccessGate', 'Excepción comprobando sesión:', { error: err.message });
+    } finally {
+      if (authService.currentUser) {
+        logger.info('AccessGate', `Sesión existente detectada: ${authService.currentUser.email}. Entrando automáticamente.`);
+        this._unlock();
+      } else {
+        this._showLoginButton();
+      }
     }
-
-    await this._waitForSessionCheck();
-
-    if (authService.currentUser) {
-      logger.info('AccessGate', `Sesión existente detectada: ${authService.currentUser.email}. Entrando automáticamente.`);
-      this._unlock();
-    } else {
-      this._showLoginButton();
-    }
-  }
-
-  _waitForSessionCheck(timeoutMs = 1500) {
-    return new Promise((resolve) => {
-      const start = Date.now();
-      const poll = () => {
-        if (!authService.checkingSession) {
-          resolve();
-          return;
-        }
-        if (Date.now() - start > timeoutMs) {
-          logger.warn('AccessGate', 'Tiempo de espera agotado comprobando la sesión; se muestran botones de acceso.');
-          resolve();
-          return;
-        }
-        setTimeout(poll, 100);
-      };
-      poll();
-    });
   }
 
   async _handleLoginClick() {

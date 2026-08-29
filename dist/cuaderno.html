@@ -1403,18 +1403,18 @@ textarea {
         <div class="access-gate-sub">Acceso privado — cuenta personal de Google</div>
       </div>
 
-      <div id="access-gate-status" class="access-gate-status">
+      <div id="access-gate-status" class="access-gate-status" style="display:none;">
         <div class="access-gate-spinner"></div>
         <span id="access-gate-status-text">Comprobando sesión...</span>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
-        <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:none;">
+        <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:flex;">
           <span style="font-size: 1.1rem;">🌐</span>
           <span>Entrar con Google</span>
         </button>
 
-        <button class="btn btn-glass btn-full" id="btn-gate-guest" style="display:none; font-size:0.85rem; padding: 10px;">
+        <button class="btn btn-glass btn-full" id="btn-gate-guest" style="display:flex; font-size:0.85rem; padding: 10px;">
           <span>⚡ Continuar como Visitante / Modo Local</span>
         </button>
       </div>
