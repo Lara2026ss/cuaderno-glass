@@ -209,11 +209,11 @@ main {
 }
 
 /* Header de Vistas */
-.view-content {
+.tab-view {
   display: none;
   min-width: 0;
 }
-.view-content.active {
+.tab-view.active {
   display: block;
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
