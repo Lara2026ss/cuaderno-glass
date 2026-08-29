@@ -93,14 +93,6 @@ app.use(express.static(__dirname));
 app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
 // SPA Fallback: redirigir cualquier otra ruta no capturada a cuaderno.html
-app.get('*', (req, res) => {
-  // Ignorar llamadas a la API que no existen
-  if (req.originalUrl.startsWith('/api/')) {
-    return res.status(404).json({ error: 'Endpoint no encontrado' });
-  }
-  res.sendFile(path.join(__dirname, 'dist', 'cuaderno.html'));
-});
-
 // Middleware de autenticación con Firebase Token
 async function verifyAuthToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -428,7 +420,16 @@ process.on('unhandledRejection', (reason) => {
 
 // Iniciar servidor si se ejecuta directamente
 if (process.argv[1] && process.argv[1].endsWith('server.js')) {
-  app.listen(PORT, () => {
+  
+// RUTA DE CAÍDA SPA (Wildcard) — redirige cualquier ruta no capturada a cuaderno.html
+app.get('*', (req, res) => {
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint no encontrado' });
+  }
+  res.sendFile(path.join(__dirname, 'dist', 'cuaderno.html'));
+});
+
+app.listen(PORT, () => {
     // 1. Inicializar trabajadores de fondo y servicios primero
     startPriceMonitoringWorker();
 
