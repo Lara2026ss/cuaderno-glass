@@ -84,7 +84,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir estáticos
+// Servir estáticos y el bundle compilado dist/cuaderno.html
+app.get(['/', '/index.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'cuaderno.html'));
+});
+
 app.use(express.static(__dirname));
 app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
