@@ -208,8 +208,10 @@ export class TasksFeature {
       
       if (pendingSlice.length === 0) {
         this.dashboardContainer.innerHTML = `
-          <div style="text-align:center; padding:20px 10px; color:var(--text-soft); font-size:0.84rem;">
-            🎉 ¡Todo al día! No tienes tareas pendientes.
+          <div style="text-align:center; padding:32px 20px; color:var(--text-muted); background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: var(--radius-md); margin-top: 10px;">
+            <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.8;">🎉</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-main);">¡Todo al día!</div>
+            <div style="font-size:0.84rem; color:var(--text-soft);">No tienes tareas pendientes en tu radar.</div>
           </div>
         `;
       } else {

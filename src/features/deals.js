@@ -202,8 +202,10 @@ export class DealsFeature {
       const top3 = trackers.slice(0, 3);
       if (top3.length === 0) {
         this.previewContainer.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align:center; padding:20px 10px; color:var(--text-soft); font-size:0.85rem;">
-            Sin alertas de precio activas en este momento.
+          <div style="grid-column: 1 / -1; text-align:center; padding:32px 20px; color:var(--text-muted); background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: var(--radius-md);">
+            <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.8;">🛍️</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-main);">Sin alertas activas</div>
+            <div style="font-size:0.84rem; color:var(--text-soft);">Añade productos desde la pestaña Ofertas para rastrear su precio.</div>
           </div>
         `;
       } else {
