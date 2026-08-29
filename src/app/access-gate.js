@@ -1,13 +1,9 @@
 /**
  * Cuaderno Glass Pro 7.0 — Portón de Acceso (Access Gate)
- * Pantalla de login separada del UI normal. Bloquea el acceso a la app
- * hasta que exista una sesión válida de Google. Si ya hay sesión activa
- * (persistencia LOCAL de Firebase Auth), entra automáticamente sin
- * mostrar el botón de login.
- *
- * Uso personal: no hay registro/invitados, solo la cuenta de Google del
- * dueño. Una vez dentro, el resto de la app (Drive, GitHub, Discord, etc.)
- * funciona como siempre.
+ * Pantalla de bienvenida/login separada del UI normal.
+ * Si hay sesión de Google activa, entra automáticamente.
+ * Si no hay sesión, muestra el portón de acceso con opción de Entrar con Google
+ * o Continuar en Modo Visitante.
  */
 
 import { authService } from '../firebase/auth.js';
@@ -22,6 +18,7 @@ class AccessGate {
     this.statusEl = null;
     this.statusTextEl = null;
     this.btnEl = null;
+    this.btnGuestEl = null;
     this.errorEl = null;
     this.unlocked = false;
   }
@@ -35,9 +32,6 @@ class AccessGate {
     this.btnGuestEl = document.getElementById('btn-gate-guest');
     this.errorEl = document.getElementById('access-gate-error');
 
-    // Desbloquear la suite e inicializar la aplicación inmediatamente
-    this._unlock();
-
     if (this.btnEl) {
       this.btnEl.addEventListener('click', () => this._handleLoginClick());
     }
@@ -46,10 +40,8 @@ class AccessGate {
       this.btnGuestEl.addEventListener('click', () => this._unlock());
     }
 
-    // Eliminado: no relockear al portón automáticamente para permitir modo visitante sin interrupciones
     events.on('auth:user-signed-out', () => {
-      // Si el usuario cierra sesión explícitamente, puede seguir en modo visitante en la app.
-      // this._relock(); 
+      this._relock();
     });
 
     events.on('auth:user-signed-in', () => {
@@ -61,6 +53,7 @@ class AccessGate {
 
   async _checkSession() {
     this._setStatus('Comprobando sesión de Google...', true);
+    this._showStatus();
 
     try {
       await authService.init();
@@ -68,8 +61,6 @@ class AccessGate {
       logger.error('AccessGate', 'Error inicializando Firebase Auth en el portón', { error: err.message });
     }
 
-    // authService.init() escucha onAuthStateChanged de forma asíncrona;
-    // esperamos a que termine su primer chequeo (checkingSession pasa a false).
     await this._waitForSessionCheck();
 
     if (authService.currentUser) {
@@ -112,8 +103,6 @@ class AccessGate {
       if (user) {
         this._unlock();
       } else {
-        // signInWithGoogle() devuelve null cuando redirige (signInWithRedirect);
-        // la página recargará y onAuthStateChanged resolverá la sesión al volver.
         this._setStatus('Redirigiendo a Google...', true);
       }
     } catch (err) {
