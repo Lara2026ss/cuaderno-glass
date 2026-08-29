@@ -6,7 +6,7 @@ import { store } from './state.js';
 import { events } from './events.js';
 import { logger } from './logger.js';
 import { toast } from '../ui/toast.js';
-import { audio } from '../ui/audio.js';
+import { audio } from '../audio/audio-engine.js';
 import { modals } from '../ui/modals.js';
 import { AppRouter } from './router.js';
 

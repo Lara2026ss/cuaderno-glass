@@ -5,10 +5,10 @@
 import { store } from '../app/state.js';
 import { events } from '../app/events.js';
 import { toast } from '../ui/toast.js';
-import { audio } from '../ui/audio.js';
+import { audio } from '../audio/audio-engine.js';
 import { googleDriveAdapter } from '../integrations/google-drive.js';
 import { firestoreRepo } from '../firebase/firestore.js';
-import { formatDate, escapeHtml } from '../utils/helpers.js';
+import { formatDate, escapeHtml } from '../ui/components.js';
 
 export class DocumentsFeature {
   constructor() {
@@ -448,7 +448,7 @@ export class DocumentsFeature {
           <div style="display:flex; gap:8px;">
             <button class="btn btn-glass btn-sm btn-edit-doc" title="Editar documento">✏️ Editar</button>
             <button class="btn btn-glass btn-sm btn-copy-doc" title="Copiar texto">📋 Copiar</button>
-            <button class="btn btn-glass btn-sm btn-drive-doc" title="Subir a Google Drive">☁️ Drive</button>
+            <button class="btn btn-drive-doc" title="Subir a Google Drive">☁️ Drive</button>
             <button class="btn btn-danger btn-sm btn-del-doc" title="Eliminar">🗑️</button>
           </div>
         </div>

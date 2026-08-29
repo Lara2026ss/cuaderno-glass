@@ -3,7 +3,7 @@
  */
 
 import { store } from '../app/state.js';
-import { audio } from './audio.js';
+import { audio } from '../audio/audio-engine.js';
 import { toast } from './toast.js';
 import { initializeFirebaseApp } from '../firebase/config.js';
 import { authService } from '../firebase/auth.js';

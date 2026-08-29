@@ -4,7 +4,7 @@
 
 import { store } from '../app/state.js';
 import { toast } from '../ui/toast.js';
-import { audio } from '../ui/audio.js';
+import { audio } from '../audio/audio-engine.js';
 
 export class PomodoroFeature {
   constructor() {

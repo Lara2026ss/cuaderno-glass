@@ -5,9 +5,9 @@
 import { store } from '../app/state.js';
 import { events } from '../app/events.js';
 import { toast } from '../ui/toast.js';
-import { audio } from '../ui/audio.js';
+import { audio } from '../audio/audio-engine.js';
 import { firestoreRepo } from '../firebase/firestore.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml } from '../ui/components.js';
 
 export class TasksFeature {
   constructor() {
