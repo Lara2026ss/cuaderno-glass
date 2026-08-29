@@ -171,7 +171,7 @@ class AppBootstrap {
         if (authText) authText.textContent = 'Cerrar Sesión';
       } else {
         if (userName) userName.textContent = 'Modo Visitante';
-        if (userEmail) userEmail.textContent = 'Sincroniza tus datos';
+        if (userEmail) userEmail.textContent = '☁️ Conexión Cloud Lista';
         if (avatarImg) avatarImg.innerHTML = '👤';
         if (authText) {
           authText.textContent = 'Iniciar Sesión con Google';
