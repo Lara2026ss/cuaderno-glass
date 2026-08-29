@@ -138,6 +138,97 @@ body {
   100% { transform: translate(-30px, 40px) scale(0.95); }
 }
 
+/* =========================================================
+   PORTÓN DE ACCESO (ACCESS GATE) — Login previo con Google
+   ========================================================= */
+.access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-base);
+  background-image: var(--bg-mesh);
+  overflow: hidden;
+}
+
+.access-gate-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.22;
+  pointer-events: none;
+  animation: floatOrb 22s infinite ease-in-out alternate;
+}
+.access-gate-orb-1 { width: 480px; height: 480px; background: var(--primary); top: -120px; left: -100px; }
+.access-gate-orb-2 { width: 420px; height: 420px; background: var(--accent-cyan); bottom: -100px; right: -80px; animation-duration: 26s; }
+
+.access-gate-card {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 90vw);
+  padding: 36px 30px;
+  border-radius: var(--radius-xl);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-shine);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  animation: gateCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes gateCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.access-gate-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.access-gate-title { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: 0.04em; }
+.access-gate-sub { font-size: 0.8rem; color: var(--text-soft); }
+
+.access-gate-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.access-gate-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--primary);
+  animation: gateSpin 0.7s linear infinite;
+}
+@keyframes gateSpin { to { transform: rotate(360deg); } }
+
+.access-gate-btn { justify-content: center; }
+
+.access-gate-error {
+  width: 100%;
+  font-size: 0.8rem;
+  color: var(--accent-coral);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  line-height: 1.4;
+}
+
+.access-gate-footnote {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  opacity: 0.8;
+}
+
 /* Shell */
 .app-shell {
   position: relative;

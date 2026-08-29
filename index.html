@@ -32,9 +32,38 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+  <!-- PORTÓN DE ACCESO — Pantalla de login previa, separada del UI normal.
+       Bloquea el acceso a .app-shell hasta que exista una sesión de Google válida. -->
+  <div id="access-gate" class="access-gate">
+    <div class="access-gate-orb access-gate-orb-1"></div>
+    <div class="access-gate-orb access-gate-orb-2"></div>
+
+    <div class="access-gate-card" id="access-gate-card">
+      <div class="access-gate-brand">
+        <div class="brand-icon" style="font-size:2.4rem;">📔</div>
+        <div class="access-gate-title">CUADERNO GLASS PRO</div>
+        <div class="access-gate-sub">Acceso privado — cuenta personal de Google</div>
+      </div>
+
+      <div id="access-gate-status" class="access-gate-status">
+        <div class="access-gate-spinner"></div>
+        <span id="access-gate-status-text">Comprobando sesión...</span>
+      </div>
+
+      <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:none;">
+        <span style="font-size: 1.1rem;">🇬</span>
+        <span>Entrar con Google</span>
+      </button>
+
+      <div id="access-gate-error" class="access-gate-error" style="display:none;"></div>
+
+      <div class="access-gate-footnote">Solo tu cuenta puede entrar aquí. Nadie más tiene acceso a este cuaderno.</div>
+    </div>
+  </div>
+
   <div class="mobile-overlay" id="mobile-overlay"></div>
 
-  <div class="app-shell">
+  <div class="app-shell" id="app-shell" style="display:none;">
     <!-- BARRA LATERAL (SIDEBAR) -->
     <aside class="sidebar" id="sidebar-nav">
       <div class="brand">
@@ -481,11 +510,11 @@
 
   <!-- ARRANQUE ES MODULES DEFENSIVO -->
   <script type="module">
-    import { bootstrap } from './src/app/bootstrap.js';
+    import { accessGate } from './src/app/access-gate.js';
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => bootstrap.init());
+      document.addEventListener('DOMContentLoaded', () => accessGate.init());
     } else {
-      bootstrap.init();
+      accessGate.init();
     }
   </script>
 </body>

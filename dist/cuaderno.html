@@ -173,6 +173,97 @@ body {
   100% { transform: translate(-30px, 40px) scale(0.95); }
 }
 
+/* =========================================================
+   PORTÓN DE ACCESO (ACCESS GATE) — Login previo con Google
+   ========================================================= */
+.access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-base);
+  background-image: var(--bg-mesh);
+  overflow: hidden;
+}
+
+.access-gate-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.22;
+  pointer-events: none;
+  animation: floatOrb 22s infinite ease-in-out alternate;
+}
+.access-gate-orb-1 { width: 480px; height: 480px; background: var(--primary); top: -120px; left: -100px; }
+.access-gate-orb-2 { width: 420px; height: 420px; background: var(--accent-cyan); bottom: -100px; right: -80px; animation-duration: 26s; }
+
+.access-gate-card {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 90vw);
+  padding: 36px 30px;
+  border-radius: var(--radius-xl);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-shine);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  animation: gateCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes gateCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.access-gate-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.access-gate-title { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: 0.04em; }
+.access-gate-sub { font-size: 0.8rem; color: var(--text-soft); }
+
+.access-gate-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.access-gate-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--primary);
+  animation: gateSpin 0.7s linear infinite;
+}
+@keyframes gateSpin { to { transform: rotate(360deg); } }
+
+.access-gate-btn { justify-content: center; }
+
+.access-gate-error {
+  width: 100%;
+  font-size: 0.8rem;
+  color: var(--accent-coral);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  line-height: 1.4;
+}
+
+.access-gate-footnote {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  opacity: 0.8;
+}
+
 /* Shell */
 .app-shell {
   position: relative;
@@ -990,9 +1081,38 @@ textarea {
 </style>
 </head>
 <body>
+  <!-- PORTÓN DE ACCESO — Pantalla de login previa, separada del UI normal.
+       Bloquea el acceso a .app-shell hasta que exista una sesión de Google válida. -->
+  <div id="access-gate" class="access-gate">
+    <div class="access-gate-orb access-gate-orb-1"></div>
+    <div class="access-gate-orb access-gate-orb-2"></div>
+
+    <div class="access-gate-card" id="access-gate-card">
+      <div class="access-gate-brand">
+        <div class="brand-icon" style="font-size:2.4rem;">📔</div>
+        <div class="access-gate-title">CUADERNO GLASS PRO</div>
+        <div class="access-gate-sub">Acceso privado — cuenta personal de Google</div>
+      </div>
+
+      <div id="access-gate-status" class="access-gate-status">
+        <div class="access-gate-spinner"></div>
+        <span id="access-gate-status-text">Comprobando sesión...</span>
+      </div>
+
+      <button class="btn btn-google btn-full access-gate-btn" id="btn-gate-google-auth" style="display:none;">
+        <span style="font-size: 1.1rem;">🇬</span>
+        <span>Entrar con Google</span>
+      </button>
+
+      <div id="access-gate-error" class="access-gate-error" style="display:none;"></div>
+
+      <div class="access-gate-footnote">Solo tu cuenta puede entrar aquí. Nadie más tiene acceso a este cuaderno.</div>
+    </div>
+  </div>
+
   <div class="mobile-overlay" id="mobile-overlay"></div>
 
-  <div class="app-shell">
+  <div class="app-shell" id="app-shell" style="display:none;">
     <!-- BARRA LATERAL (SIDEBAR) -->
     <aside class="sidebar" id="sidebar-nav">
       <div class="brand">
@@ -1439,11 +1559,11 @@ textarea {
 
   <!-- ARRANQUE ES MODULES DEFENSIVO -->
   <script type="module">
-    import { bootstrap } from './src/app/bootstrap.js';
+    import { accessGate } from './src/app/access-gate.js';
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => bootstrap.init());
+      document.addEventListener('DOMContentLoaded', () => accessGate.init());
     } else {
-      bootstrap.init();
+      accessGate.init();
     }
   </script>
 </body>

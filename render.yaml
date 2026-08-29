@@ -1,3 +1,19 @@
+# NOTA: Ademas de NODE_VERSION, este servicio requiere las siguientes
+# variables configuradas manualmente en el dashboard de Render
+# (Settings -> Environment) porque son secretos y no se declaran aqui:
+#   FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_AUTH_DOMAIN,
+#   FIREBASE_MESSAGING_SENDER_ID, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET,
+#   GROQ_API_KEY
+# Y CRITICO para que el login con Google funcione en el backend
+# (verificacion de tokens, endpoints no degradados):
+#   FIREBASE_SERVICE_ACCOUNT  -> el JSON completo del service account de
+#   Firebase Admin (Firebase Console -> Configuracion del proyecto ->
+#   Cuentas de servicio -> Generar nueva clave privada), pegado como una
+#   sola linea de texto JSON.
+# Ademas: el dominio del servicio (ej. cuaderno-glass.onrender.com) debe
+# agregarse en Firebase Console -> Authentication -> Settings ->
+# Authorized domains, o el login con Google fallara con
+# auth/unauthorized-domain y el usuario quedara atascado en modo invitado.
 services:
   - type: web
     name: cuaderno-glass

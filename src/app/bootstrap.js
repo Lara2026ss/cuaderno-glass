@@ -90,11 +90,15 @@ class AppBootstrap {
 
   async _setupFirebase() {
     try {
-      // Siempre intentar cargar la config del servidor o usar la default
+      // El Portón de Acceso (access-gate.js) ya inicializa Firebase Auth
+      // antes de revelar el shell, así que aquí solo nos aseguramos de que
+      // la config esté cargada sin reinicializar sesión dos veces.
       await fetchServerFirebaseConfig();
       initializeFirebaseApp();
-      await authService.init();
-      logger.info('Bootstrap', 'Firebase Auth inicializado en arranque.');
+      if (!authService.initialized) {
+        await authService.init();
+      }
+      logger.info('Bootstrap', 'Firebase Auth listo en arranque.');
     } catch (err) {
       logger.warn('Bootstrap', 'Firebase no pudo inicializarse en arranque', { error: err.message });
     }
