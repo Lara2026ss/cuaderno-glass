@@ -1,9 +1,11 @@
 /**
  * Cuaderno Glass Pro 7.0 — Portón de Acceso (Access Gate)
  * Pantalla de bienvenida/login separada del UI normal.
- * Si hay sesión de Google activa, entra automáticamente.
- * Si no hay sesión, muestra el portón de acceso con opción de Entrar con Google
- * o Continuar en Modo Visitante.
+ * Inspirado en el flujo instantáneo de rules-web:
+ * - Cero bloqueos en 'Comprobando sesión'.
+ * - Botones siempre activos e interactivos desde el primer milisegundo.
+ * - Desbloqueo instantáneo al dar clic en 'Continuar como Visitante'.
+ * - Autenticación limpia con Google sin loops ni spinners infinitos.
  */
 
 import { authService } from '../firebase/auth.js';
@@ -37,6 +39,9 @@ class AccessGate {
     this.btnGuestEl = document.getElementById('btn-gate-guest');
     this.errorEl = document.getElementById('access-gate-error');
 
+    // Garantizar que los botones están siempre visibles y habilitados por defecto
+    this._showLoginButton();
+
     if (this.btnEl) {
       this.btnEl.addEventListener('click', (e) => {
         e.preventDefault();
@@ -53,7 +58,7 @@ class AccessGate {
       });
     }
 
-    // Solo relockear si existía una sesión autenticada real que se cerró explícitamente
+    // Escuchar cierres de sesión explícitos
     events.on('auth:user-signed-out', () => {
       if (this.wasAuthenticated) {
         this.wasAuthenticated = false;
@@ -61,28 +66,29 @@ class AccessGate {
       }
     });
 
+    // Escuchar ingresos con sesión activa
     events.on('auth:user-signed-in', (user) => {
       if (user) this.wasAuthenticated = true;
       this._unlock();
     });
 
+    // Chequeo en segundo plano silencioso de sesión previa
     this._checkSession();
   }
 
   async _checkSession() {
-    this._setStatus('Comprobando sesión...', true);
-
     try {
+      // Chequeo asíncrono silencioso sin bloquear los botones del usuario
       await Promise.race([
         authService.init(),
-        new Promise((resolve) => setTimeout(resolve, 800))
+        new Promise((resolve) => setTimeout(resolve, 600))
       ]);
     } catch (err) {
-      logger.warn('AccessGate', 'Excepción comprobando sesión:', { error: err.message });
+      logger.debug('AccessGate', 'Chequeo de sesión silencioso expiró o fue omitido');
     } finally {
       if (authService.currentUser) {
         this.wasAuthenticated = true;
-        logger.info('AccessGate', `Sesión existente detectada: ${authService.currentUser.email}. Entrando automáticamente.`);
+        logger.info('AccessGate', `Sesión activa detectada (${authService.currentUser.email}). Entrando a la suite.`);
         this._unlock();
       } else {
         this._showLoginButton();
@@ -92,10 +98,8 @@ class AccessGate {
 
   async _handleLoginClick() {
     this._hideError();
-    this._setStatus('Abriendo ventana de Google...', true);
+    this._setStatus('Abriendo ventana de Google...');
     this._showStatus();
-    if (this.btnEl) this.btnEl.disabled = true;
-    if (this.btnGuestEl) this.btnGuestEl.disabled = true;
 
     try {
       const user = await authService.signInWithGoogle();
@@ -103,10 +107,10 @@ class AccessGate {
         this.wasAuthenticated = true;
         this._unlock();
       } else {
-        this._setStatus('Redirigiendo a Google...', true);
+        this._setStatus('Redirigiendo a autenticación...');
       }
     } catch (err) {
-      logger.error('AccessGate', 'Fallo el login de Google en el portón', { code: err.code, message: err.friendlyMessage || err.message });
+      logger.error('AccessGate', 'Error al iniciar sesión con Google', { message: err.message });
       this._showError(this._describeError(err));
       this._showLoginButton();
     } finally {
@@ -117,9 +121,9 @@ class AccessGate {
 
   _describeError(err) {
     if (err && err.code === 'auth/unauthorized-domain') {
-      return `Este dominio (${window.location.hostname}) no está autorizado en Firebase. Ve a Firebase Console → Authentication → Settings → Authorized domains y agrégalo.`;
+      return `Este dominio (${window.location.hostname}) no está autorizado en Firebase Authentication. Ve a Firebase Console → Auth → Settings → Authorized domains y añádelo.`;
     }
-    return (err && err.friendlyMessage) || (err && err.message) || 'No se pudo iniciar sesión con Google. Intenta de nuevo o entra en Modo Visitante.';
+    return (err && err.friendlyMessage) || (err && err.message) || 'No se pudo completar el acceso con Google. Inténtalo de nuevo o entra en Modo Visitante.';
   }
 
   _showLoginButton() {
@@ -161,22 +165,31 @@ class AccessGate {
     if (this.unlocked) return;
     this.unlocked = true;
 
+    // 1. Mostrar app shell inmediatamente
+    if (this.shellEl) {
+      this.shellEl.style.display = 'flex';
+      this.shellEl.style.opacity = '1';
+    }
+
+    // 2. Transición suave de salida del Portón (estilo rules-web)
     if (this.gateEl) {
+      this.gateEl.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
       this.gateEl.style.opacity = '0';
       this.gateEl.style.pointerEvents = 'none';
     }
-    if (this.shellEl) this.shellEl.style.display = 'flex';
 
     setTimeout(() => {
       if (this.gateEl) this.gateEl.style.display = 'none';
-    }, 250);
+    }, 300);
 
+    // 3. Inicializar suite principal
     bootstrap.init();
   }
 
   _relock() {
     this.unlocked = false;
     bootstrap.initialized = false;
+
     if (this.shellEl) this.shellEl.style.display = 'none';
     if (this.gateEl) {
       this.gateEl.style.display = 'flex';
