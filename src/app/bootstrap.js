@@ -10,7 +10,7 @@ import { audio } from '../audio/audio-engine.js';
 import { modals } from '../ui/modals.js';
 import { AppRouter } from './router.js';
 
-import { initializeFirebaseApp } from '../firebase/config.js';
+import { initializeFirebaseApp, fetchServerFirebaseConfig } from '../firebase/config.js';
 import { authService } from '../firebase/auth.js';
 import { firestoreRepo } from '../firebase/firestore.js';
 import { dataSyncManager } from '../firebase/sync.js';
