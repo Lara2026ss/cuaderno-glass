@@ -10,7 +10,9 @@
     "test": "node tests/run-all.js",
     "test:security": "node tests/security-scan.test.js",
     "test:html": "node tests/html-audit.test.js",
-    "build": "node build.js"
+    "build": "node build.js",
+    "prebuild": "npm install",
+    "prestart": "npm install"
   },
   "keywords": [
     "productivity",
