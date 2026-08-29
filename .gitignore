@@ -29,3 +29,5 @@ scratch/
 scratch_*.json
 tmp/
 temp/
+payload*.json
+mcp_args*.json

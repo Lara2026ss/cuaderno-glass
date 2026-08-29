@@ -157,23 +157,24 @@ class AppBootstrap {
 
     const updateProfileUI = () => {
       const user = store.get('user');
-      const hasApiKey = !!store.get('settings.firebaseConfig.apiKey');
+      const fbConfig = store.get('settings.firebaseConfig');
+      const isLocal = fbConfig && fbConfig.apiKey === 'local-mode-no-key';
       
       if (user) {
         if (userName) userName.textContent = user.displayName || 'Usuario Google';
         if (userEmail) userEmail.textContent = user.email || 'Conectado a la nube';
         if (avatarImg) {
           avatarImg.innerHTML = user.photoURL 
-            ? `<img src="${user.photoURL}" alt="Avatar" style="width:100%; height:100%; border-radius:50%;">`
+            ? `<img src="${user.photoURL}" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
             : '👤';
         }
         if (authText) authText.textContent = 'Cerrar Sesión';
       } else {
-        if (userName) userName.textContent = 'Modo Local / Demo';
-        if (userEmail) userEmail.textContent = 'Sin conexión cloud';
+        if (userName) userName.textContent = isLocal ? 'Modo Local / Demo' : 'Modo Visitante';
+        if (userEmail) userEmail.textContent = isLocal ? 'Sin conexión cloud' : 'Sincroniza tus datos';
         if (avatarImg) avatarImg.innerHTML = '👤';
         if (authText) {
-          authText.textContent = hasApiKey ? 'Iniciar Sesión con Google' : 'Configurar Conexión Cloud';
+          authText.textContent = isLocal ? 'Modo Local (Forzado)' : 'Iniciar Sesión con Google';
         }
       }
     };
@@ -210,8 +211,10 @@ class AppBootstrap {
             toast.error('Error al cerrar sesión');
           }
         } else {
-          if (!hasApiKey) {
-            toast.info('Estás en Modo Local. Para iniciar sesión, primero configura tu API Key en los ajustes.');
+          // Si el usuario forzó explícitamente el modo local
+          const fbConfig = store.get('settings.firebaseConfig');
+          if (fbConfig && fbConfig.apiKey === 'local-mode-no-key') {
+            toast.info('Estás en Modo Local forzado. Para usar la nube, carga el Preset Recomendado en Ajustes.');
             modals.open('modal-settings');
             return;
           }
@@ -219,16 +222,12 @@ class AppBootstrap {
           try {
             authBtn.disabled = true;
             if (authText) authText.textContent = 'Abriendo Google...';
-            toast.info('Abriendo inicio de sesión con Google...');
-
             await authService.signInWithGoogle();
-          } catch (mappedError) {
-            logger.warn('AuthUI', 'Aviso de autenticación:', mappedError);
-            
-            if (mappedError.isConfigError) {
-              toast.info(mappedError.friendlyMessage || 'Modo Local activo. Para sincronizar con la nube, configura Firebase en Ajustes.');
-            } else {
-              toast.error(mappedError.friendlyMessage || mappedError.message || 'No se pudo completar el inicio de sesión');
+          } catch (err) {
+            logger.error('AppBootstrap', 'Error de Auth', { error: err.message });
+            toast.error(err.friendlyMessage || 'Error al iniciar sesión con Google');
+            if (err.isConfigError) {
+              modals.open('modal-settings');
             }
           } finally {
             authBtn.disabled = false;

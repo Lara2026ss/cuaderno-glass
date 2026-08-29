@@ -129,29 +129,7 @@ export class ModalManager {
     }
   }
 
-  applyRecommendedPresets() {
-    if (typeof document === 'undefined') return;
-    const p = document.getElementById('setting-fb-project');
-    const d = document.getElementById('setting-fb-domain');
-    const a = document.getElementById('setting-fb-apikey');
-    if(p) p.value = 'alero-company-works';
-    if(d) d.value = 'alero-company-works.firebaseapp.com';
-    if(a) a.value = '';
-    const toastObj = require('./toast.js').toast || (typeof window !== 'undefined' ? window.toast : null);
-    if (toastObj && typeof toastObj.info === 'function') toastObj.info('Preset recomendado cargado (falta API Key)');
-  }
 
-  applyLocalModePreset() {
-    if (typeof document === 'undefined') return;
-    const p = document.getElementById('setting-fb-project');
-    const d = document.getElementById('setting-fb-domain');
-    const a = document.getElementById('setting-fb-apikey');
-    if(p) p.value = 'local-demo';
-    if(d) d.value = 'localhost';
-    if(a) a.value = 'local-mode-no-key';
-    const toastObj = require('./toast.js').toast || (typeof window !== 'undefined' ? window.toast : null);
-    if (toastObj && typeof toastObj.success === 'function') toastObj.success('Modo Local Offline configurado');
-  }
 
   saveSettingsFromForm() {
     const getVal = (id) => document.getElementById(id)?.value.trim() || '';
@@ -186,13 +164,23 @@ export class ModalManager {
     audio.setMute(!audioEnabled);
 
     // Re-inicializar Firebase si se suministró configuración
+    let requiresReload = false;
+    
     if (firebaseConfig) {
-      initializeFirebaseApp(firebaseConfig);
-      authService.init();
+      const currentConfig = store.get('settings.firebaseConfig');
+      if (JSON.stringify(currentConfig) !== JSON.stringify(firebaseConfig)) {
+        requiresReload = true;
+      }
     }
 
     this.close();
-    toast.success('Configuración guardada correctamente');
+    
+    if (requiresReload) {
+      toast.info('Recargando para aplicar ajustes de nube...');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      toast.success('Configuración guardada correctamente');
+    }
   }
 
   openMigrationModal(counts) {
