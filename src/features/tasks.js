@@ -49,6 +49,11 @@ export class TasksFeature {
       document.querySelectorAll('.task-category-chip, #task-filter-chips .chip, .task-filter-chips .chip').forEach(c => {
         c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
       });
+      
+      const catSelect = document.getElementById('task-category-select');
+      if (catSelect && cat !== 'all') {
+        catSelect.value = cat;
+      }
     }
 
     audio.soundClick();

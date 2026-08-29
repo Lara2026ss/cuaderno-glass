@@ -114,6 +114,11 @@ export class DocumentsFeature {
       document.querySelectorAll('#doc-category-chips .chip, #tab-documents .filter-chips .chip').forEach(c => {
         c.classList.toggle('active', (c.dataset.cat || 'all') === cat);
       });
+
+      const catSelect = document.getElementById('editor-doc-category');
+      if (catSelect && cat !== 'all') {
+        catSelect.value = cat;
+      }
     }
 
     audio.soundClick();

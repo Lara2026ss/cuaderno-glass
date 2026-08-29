@@ -136,6 +136,7 @@ export class ModalManager {
 
     const groqKey = getVal('setting-groq-apikey');
     const groqModel = getVal('setting-groq-model') || 'openai/gpt-oss-120b';
+    const geminiKey = getVal('setting-gemini-apikey');
 
     const apiKey = getVal('setting-fb-apikey');
     const authDomain = getVal('setting-fb-authdomain');
@@ -148,9 +149,16 @@ export class ModalManager {
       firebaseConfig = { apiKey, authDomain, projectId, storageBucket, appId };
     }
 
+    // Comprobar si requiere recarga ANTES de guardar en el store
+    let requiresReload = false;
+    const currentConfig = store.get('settings.firebaseConfig');
+    if (JSON.stringify(currentConfig) !== JSON.stringify(firebaseConfig)) {
+      requiresReload = true;
+    }
+
     store.set('settings.groqApiKey', groqKey);
     store.set('settings.groqModel', groqModel);
-    store.set('settings.geminiApiKey', groqKey);
+    store.set('settings.geminiApiKey', geminiKey);
     store.set('settings.firebaseConfig', firebaseConfig);
     store.set('settings.googleClientId', getVal('setting-google-clientid'));
     store.set('settings.discordWebhookUrl', getVal('setting-discord-webhook'));
@@ -162,16 +170,6 @@ export class ModalManager {
 
     const audioEnabled = document.getElementById('setting-audio-toggle')?.checked ?? true;
     audio.setMute(!audioEnabled);
-
-    // Re-inicializar Firebase si se suministró configuración
-    let requiresReload = false;
-    
-    if (firebaseConfig) {
-      const currentConfig = store.get('settings.firebaseConfig');
-      if (JSON.stringify(currentConfig) !== JSON.stringify(firebaseConfig)) {
-        requiresReload = true;
-      }
-    }
 
     this.close();
     
