@@ -199,3 +199,5 @@ export class GeminiFeature {
 
   render() {}
 }
+
+export const geminiFeature = new GeminiFeature();
