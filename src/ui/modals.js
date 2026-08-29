@@ -151,8 +151,6 @@ export class ModalManager {
     const animEl = document.getElementById('setting-animations');
     if (animEl) animEl.value = settings.animations || 'full';
 
-    const groqKeyEl = document.getElementById('setting-groq-key');
-    if (groqKeyEl) groqKeyEl.value = settings.groqApiKey || '';
 
     const groqModelEl = document.getElementById('setting-groq-model');
     if (groqModelEl) groqModelEl.value = settings.groqModel || 'llama-3.3-70b-versatile';
@@ -210,10 +208,6 @@ export class ModalManager {
       }
     }
 
-    const groqKeyEl = document.getElementById('setting-groq-key');
-    if (groqKeyEl && groqKeyEl.value.trim()) {
-      store.set('settings.groqApiKey', groqKeyEl.value.trim());
-    }
 
     const groqModelEl = document.getElementById('setting-groq-model');
     if (groqModelEl) store.set('settings.groqModel', groqModelEl.value);

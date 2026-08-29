@@ -547,18 +547,16 @@
 
         <!-- TAB: IA -->
         <div class="settings-panel" id="settings-panel-ia">
-          <div class="settings-section-title">Groq AI</div>
-          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
-            <label>API Key de Groq (opcional)</label>
-            <input type="password" id="setting-groq-key" placeholder="Clave API de Groq (opcional)">
-            <span style="font-size:0.72rem;color:var(--text-soft);">Sin key, usa el servidor proxy de la suite.</span>
-          </div>
-          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
-            <label>Modelo</label>
-            <select id="setting-groq-model">
-              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (recomendado)</option>
-              <option value="llama-3.1-8b-instant">Llama 3.1 8B (rápido)</option>
-              <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+          <div class="settings-section-title">Groq AI Copilot</div>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">
+            Groq AI se conecta automáticamente a la API configurada en el servidor (servidor proxy backend).
+          </p>
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px;">
+            <label>Modelo IA (Velocidad / Inteligencia)</label>
+            <select id="setting-groq-model" style="width:100%;">
+              <option value="llama-3.3-70b-versatile">⚡ Llama 3.3 70B (Recomendado - Balanceado)</option>
+              <option value="llama-3.1-8b-instant">🚀 Llama 3.1 8B (Ultra Rápido)</option>
+              <option value="mixtral-8x7b-32768">🧠 Mixtral 8x7B (Razonamiento)</option>
             </select>
           </div>
         </div>

@@ -272,7 +272,7 @@ app.get('/api/price-tracker/check', async (req, res) => {
 
 // 4. Groq AI Chat Proxy & Function Calling (OpenAI GPT OSS 120B / Llama)
 app.post('/api/ai/chat', async (req, res) => {
-  const { prompt, systemInstruction, model = 'openai/gpt-oss-120b', tools } = req.body;
+  const { prompt, systemInstruction, model = 'llama-3.3-70b-versatile', tools } = req.body;
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
