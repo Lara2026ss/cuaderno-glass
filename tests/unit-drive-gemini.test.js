@@ -112,15 +112,39 @@ export async function runDriveGeminiTests() {
   assert.ok(!summaryReply.includes('undefined'), 'No debe tener valores undefined en el resumen');
   console.log('  ✓ Gemini Copilot: Asistente local y comandos en lenguaje natural validados');
 
-  // Test 10: Modals Module Structure Validation
+  // Test 10: Modals Module Structure & Presets Validation
   const { modals } = await import('../src/ui/modals.js');
   assert.ok(typeof modals.open === 'function');
   assert.ok(typeof modals.close === 'function');
   assert.ok(typeof modals.openPriceHistory === 'function');
   assert.ok(typeof modals.openDrivePicker === 'function');
-  console.log('  ✓ ModalManager: Integridad estructural y métodos validados');
+  assert.ok(typeof modals.applyRecommendedPresets === 'function');
+  assert.ok(typeof modals.applyLocalModePreset === 'function');
+  
+  modals.applyLocalModePreset();
+  assert.strictEqual(store.get('settings.firebaseConfig'), null);
+  console.log('  ✓ ModalManager: Integridad estructural y presets 1-clic validados');
 
-  console.log('✅ Todas las pruebas de Google Drive, Gemini, Notifications & Modals pasaron con éxito (10/10).\n');
+  // Test 11: Tasks Category Filtering & Persistence Validation
+  const { tasksFeature } = await import('../src/features/tasks.js');
+  tasksFeature.setCategory('Estudio');
+  assert.strictEqual(tasksFeature.activeCategory, 'Estudio');
+  assert.strictEqual(store.get('tasksCategoryFilter'), 'Estudio');
+  tasksFeature.setCategory('all');
+  assert.strictEqual(tasksFeature.activeCategory, 'all');
+  console.log('  ✓ TasksFeature: Filtrado por categorías y reactividad validado');
+
+  // Test 12: Pomodoro Feature Modes & Formatting Validation
+  const { pomodoroFeature } = await import('../src/features/pomodoro.js');
+  assert.strictEqual(pomodoroFeature.formatTime(1500), '25:00');
+  assert.strictEqual(pomodoroFeature.formatTime(300), '05:00');
+  pomodoroFeature.setMode('shortBreak');
+  assert.strictEqual(store.get('pomodoro.mode'), 'shortBreak');
+  pomodoroFeature.setMode('work');
+  assert.strictEqual(store.get('pomodoro.mode'), 'work');
+  console.log('  ✓ PomodoroFeature: Modos de temporizador y formateo validados');
+
+  console.log('✅ Todas las pruebas de Google Drive, Gemini, Notifications, Categorías & Modals pasaron con éxito (12/12).\n');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('unit-drive-gemini.test.js')) {

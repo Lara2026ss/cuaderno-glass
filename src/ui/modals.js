@@ -1,12 +1,10 @@
 /**
- * Cuaderno Glass Pro 6.0 — Modal Manager
+ * Cuaderno Glass Pro 6.0 — Gestor de Modales y Ajustes
  */
 
 import { store } from '../app/state.js';
-import { audio } from '../audio/audio-engine.js';
+import { audio } from './audio.js';
 import { toast } from './toast.js';
-import { escapeHtml, formatDate } from './components.js';
-import { synchronizer } from '../firebase/sync.js';
 import { initializeFirebaseApp } from '../firebase/config.js';
 import { authService } from '../firebase/auth.js';
 
@@ -16,11 +14,12 @@ export class ModalManager {
   }
 
   open(modalId) {
-    const el = document.getElementById(modalId);
-    if (el) {
-      el.classList.add('open');
-      this.activeModal = el;
-      audio.soundClick();
+    this.close();
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('open');
+      this.activeModal = modal;
+      audio.soundModalOpen();
     }
   }
 
@@ -28,13 +27,71 @@ export class ModalManager {
     if (this.activeModal) {
       this.activeModal.classList.remove('open');
       this.activeModal = null;
-      audio.soundClick();
+      audio.soundModalClose();
     }
+    document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   }
 
   openSettings() {
     this._populateSettingsForm();
+    this._attachPresetListeners();
     this.open('modal-settings');
+  }
+
+  _attachPresetListeners() {
+    const btnPresetRecommended = document.getElementById('btn-preset-recommended');
+    if (btnPresetRecommended && !btnPresetRecommended._attached) {
+      btnPresetRecommended.addEventListener('click', () => this.applyRecommendedPresets());
+      btnPresetRecommended._attached = true;
+    }
+
+    const btnPresetLocal = document.getElementById('btn-preset-local');
+    if (btnPresetLocal && !btnPresetLocal._attached) {
+      btnPresetLocal.addEventListener('click', () => this.applyLocalModePreset());
+      btnPresetLocal._attached = true;
+    }
+  }
+
+  applyRecommendedPresets() {
+    const origin = typeof window !== 'undefined' ? (window.location.origin || 'https://cuaderno-glass.onrender.com') : 'https://cuaderno-glass.onrender.com';
+    
+    const setVal = (id, val) => {
+      if (typeof document !== 'undefined') {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      }
+    };
+
+    setVal('setting-groq-model', 'openai/gpt-oss-120b');
+    setVal('setting-github-repo', 'Lara2026ss/cuaderno-glass');
+    setVal('setting-google-clientid', '16044531269-bks9e108q788k9j41604a11g742b0365.apps.googleusercontent.com');
+    setVal('setting-fb-projectid', 'alero-company-works');
+    setVal('setting-fb-authdomain', 'alero-company-works.firebaseapp.com');
+    setVal('setting-fb-appid', '1:16044531269:web:431da21bd13952050d8d2c');
+
+    audio.soundNotification();
+    toast.success('✨ Preset Recomendado cargado. Si tienes Groq API Key, agrégala y pulsa Guardar.');
+  }
+
+  applyLocalModePreset() {
+    const setVal = (id, val) => {
+      if (typeof document !== 'undefined') {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      }
+    };
+
+    setVal('setting-fb-apikey', '');
+    setVal('setting-fb-authdomain', '');
+    setVal('setting-fb-projectid', '');
+    setVal('setting-fb-appid', '');
+
+    store.set('settings.firebaseConfig', null);
+    store.set('connections.firebase.error', null);
+    store.set('connections.firebase.lastAuthError', null);
+
+    audio.soundClick();
+    toast.info('💾 Modo Local Óptimo seleccionado. Tus datos se guardarán exclusivamente en tu navegador.');
   }
 
   _populateSettingsForm() {
@@ -124,113 +181,48 @@ export class ModalManager {
         <ul style="list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
           <li>📌 <strong>${counts.tasksCount}</strong> Tareas</li>
           <li>📝 <strong>${counts.notesCount}</strong> Notas Rápidas</li>
-          <li>📑 <strong>${counts.docsCount}</strong> Documentos</li>
-          <li>🎁 <strong>${counts.trackersCount}</strong> Productos Monitoreados</li>
+          <li>📑 <strong>${counts.documentsCount}</strong> Documentos</li>
+          <li>🎁 <strong>${counts.trackersCount}</strong> Alertas de Ofertas</li>
         </ul>
-        <div style="background: rgba(99,102,241,0.1); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; color: var(--text-muted);">
-          ℹ️ Tus datos locales se conservarán intactos y se sincronizarán de forma bidireccional.
-        </div>
+        <p style="font-size: 0.8rem; color: var(--text-soft);">
+          Si decides no migrar ahora, tus datos seguirán disponibles de forma local en este navegador.
+        </p>
       `;
-      this.open('modal-migration');
     }
-  }
-
-  async executeMigration() {
-    this.close();
-    toast.info('Iniciando migración de datos a la nube...');
-    try {
-      const result = await synchronizer.migrateLocalDataToCloud();
-      if (result.migrated) {
-        toast.success('¡Datos locales migrados con éxito a Cloud Firestore!');
-        audio.soundSuccess();
-      } else {
-        toast.info('No había datos pendientes de migración');
-      }
-    } catch (err) {
-      toast.error('Error durante la migración: ' + err.message);
-      audio.soundError();
-    }
+    this.open('modal-migration');
   }
 
   openPriceHistory(tracker) {
-    const title = document.getElementById('price-history-title');
-    const content = document.getElementById('price-history-content');
+    const titleEl = document.getElementById('price-history-title');
+    const contentEl = document.getElementById('price-history-content');
 
-    if (title) title.textContent = `📈 Historial: ${tracker.productName}`;
-    if (content) {
+    if (titleEl) {
+      titleEl.textContent = `📈 Historial de Precios — ${tracker.productName}`;
+    }
+
+    if (contentEl) {
       const history = tracker.priceHistory || [];
       if (history.length === 0) {
-        content.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No hay registros históricos suficientes todavía.</p>`;
+        contentEl.innerHTML = '<p style="color:var(--text-soft); text-align:center;">No hay registros históricos para este producto.</p>';
       } else {
-        const rows = history.map(h => `
-          <div style="display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--glass-border); font-size:0.85rem;">
-            <span style="color:var(--text-muted);">${formatDate(h.date)}</span>
-            <strong style="font-family:var(--font-mono); color:${h.price <= tracker.targetPrice ? 'var(--accent-emerald)' : 'var(--text-main)'};">$${h.price.toFixed(2)}</strong>
-          </div>
-        `).join('');
-
-        content.innerHTML = `
-          <div style="background:rgba(0,0,0,0.2); border-radius:var(--radius-md); padding:10px; margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.8rem; color:var(--text-soft);">
-              <span>Tienda: <strong>${tracker.store}</strong></span>
-              <span>Precio Meta: <strong>$${tracker.targetPrice.toFixed(2)}</strong></span>
-            </div>
-            <div style="max-height:220px; overflow-y:auto;">${rows}</div>
+        contentEl.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto;">
+            ${history.map((h, i) => `
+              <div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:var(--radius-sm);">
+                <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-soft);">${new Date(h.date).toLocaleString()}</span>
+                <span style="font-weight:700; color:${h.price <= tracker.targetPrice ? 'var(--accent-emerald)' : 'var(--text-main)'};">$${h.price.toFixed(2)}</span>
+              </div>
+            `).reverse().join('')}
           </div>
         `;
       }
-      this.open('modal-price-history');
     }
+
+    this.open('modal-price-history');
   }
 
-  openDrivePicker(files, onFilePicked) {
-    let pickerModal = document.getElementById('modal-drive-picker');
-    if (!pickerModal) {
-      pickerModal = document.createElement('div');
-      pickerModal.className = 'modal-backdrop';
-      pickerModal.id = 'modal-drive-picker';
-      pickerModal.innerHTML = `
-        <div class="modal-card">
-          <div class="card-head">
-            <div class="card-title">☁️ Seleccionar Archivo de Google Drive</div>
-            <button class="btn btn-glass btn-sm btn-close-modal">✕</button>
-          </div>
-          <div id="drive-picker-list" style="margin-top:14px; max-height:280px; overflow-y:auto;"></div>
-        </div>
-      `;
-      document.body.appendChild(pickerModal);
-
-      pickerModal.querySelector('.btn-close-modal').addEventListener('click', () => {
-        pickerModal.classList.remove('open');
-      });
-      pickerModal.addEventListener('click', (e) => {
-        if (e.target === pickerModal) pickerModal.classList.remove('open');
-      });
-    }
-
-    const listContainer = pickerModal.querySelector('#drive-picker-list');
-    if (listContainer) {
-      if (!files || files.length === 0) {
-        listContainer.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">No se encontraron archivos en Google Drive.</p>`;
-      } else {
-        listContainer.innerHTML = files.map(f => `
-          <div class="drive-file-item" data-id="${f.id}" data-name="${escapeHtml(f.name)}" style="padding:10px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-            <span>📄 ${escapeHtml(f.name)}</span>
-            <button class="btn btn-primary btn-sm">Importar</button>
-          </div>
-        `).join('');
-
-        listContainer.querySelectorAll('.drive-file-item').forEach(item => {
-          item.addEventListener('click', () => {
-            pickerModal.classList.remove('open');
-            if (onFilePicked) onFilePicked(item.dataset.id, item.dataset.name);
-          });
-        });
-      }
-    }
-
-    pickerModal.classList.add('open');
-    this.activeModal = pickerModal;
+  openDrivePicker(onPickedCallback) {
+    // Implementado directamente por googleDriveAdapter.openPicker()
   }
 }
 

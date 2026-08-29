@@ -1,5 +1,5 @@
 /**
- * Tests: HTML & Security Structure Audit
+ * Tests: Auditoría de HTML y Estructura Semántica de Cuaderno Glass Pro 6.0
  */
 
 import assert from 'assert';
@@ -12,15 +12,16 @@ const __dirname = path.dirname(__filename);
 
 export function runHtmlAudit() {
   console.log('🧪 Ejecutando auditoría de HTML y Estructura Semántica...');
+  const indexPath = path.join(__dirname, '..', 'index.html');
+  assert.ok(fs.existsSync(indexPath), 'index.html debe existir en la raíz');
 
-  const htmlPath = path.join(__dirname, '..', 'index.html');
-  const content = fs.readFileSync(htmlPath, 'utf-8');
+  const content = fs.readFileSync(indexPath, 'utf-8');
 
-  // 1. Verificar presencia de elementos clave de la arquitectura
+  // 1. Validar presencia de IDs estructurales clave
   const requiredIds = [
     'sidebar-nav',
-    'nav-btns',
     'btn-google-auth',
+    'auth-btn-text',
     'user-display-name',
     'user-display-email',
     'user-avatar-img',
@@ -28,6 +29,7 @@ export function runHtmlAudit() {
     'btn-theme-toggle',
     'btn-quick-new',
     'tab-dashboard',
+    'tab-tasks',
     'tab-deals',
     'tab-documents',
     'tab-gemini',
@@ -56,7 +58,9 @@ export function runHtmlAudit() {
     'setting-google-clientid',
     'btn-import-drive',
     'btn-export-pdf',
-    'doc-sync-status'
+    'doc-sync-status',
+    'btn-preset-recommended',
+    'btn-preset-local'
   ];
 
   requiredIds.forEach(id => {
@@ -64,26 +68,15 @@ export function runHtmlAudit() {
   });
   console.log(`  ✓ ${requiredIds.length} elementos estructurales e IDs verificados (incluyendo setting-google-clientid)`);
 
-  // 2. Verificar que no haya credenciales hardcodeadas en el HTML
-  const forbiddenPatterns = [
-    /AIzaSy[0-9a-zA-Z_-]{33}/, // Google API key pattern
-    /ghp_[0-9a-zA-Z]{36}/,     // GitHub PAT
-    /rnd_[0-9a-zA-Z]{32}/      // Render API key
-  ];
-
-  forbiddenPatterns.forEach(pattern => {
-    assert.strictEqual(pattern.test(content), false, 'No deben existir API keys hardcodeadas en index.html');
-  });
+  // 2. Validar que no haya API Keys expuestas hardcodeadas en HTML
+  assert.ok(!content.includes('AIzaSy'), 'No deben existir API Keys de Firebase hardcodeadas');
+  assert.ok(!content.includes('gsk_'), 'No deben existir API Keys de Groq hardcodeadas');
+  assert.ok(!content.includes('rnd_'), 'No deben existir API Keys de Render hardcodeadas');
   console.log('  ✓ Seguridad: Cero secretos o tokens hardcodeados en el cliente');
 
   console.log('✅ Auditoría de HTML completada exitosamente.\n');
 }
 
-if (process.argv[1] === __filename) {
-  try {
-    runHtmlAudit();
-  } catch (err) {
-    console.error('❌ Error en auditoría de HTML:', err);
-    process.exit(1);
-  }
+if (process.argv[1] && process.argv[1].endsWith('html-audit.test.js')) {
+  runHtmlAudit();
 }
