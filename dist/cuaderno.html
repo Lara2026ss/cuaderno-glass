@@ -1083,7 +1083,7 @@ textarea {
 <body>
   <!-- PORTÓN DE ACCESO — Pantalla de login previa, separada del UI normal.
        Bloquea el acceso a .app-shell hasta que exista una sesión de Google válida. -->
-  <div id="access-gate" class="access-gate">
+  <div id="access-gate" class="access-gate" style="display:none;">
     <div class="access-gate-orb access-gate-orb-1"></div>
     <div class="access-gate-orb access-gate-orb-2"></div>
 
@@ -1118,7 +1118,7 @@ textarea {
 
   <div class="mobile-overlay" id="mobile-overlay"></div>
 
-  <div class="app-shell" id="app-shell" style="display:none;">
+  <div class="app-shell" id="app-shell">
     <!-- BARRA LATERAL (SIDEBAR) -->
     <aside class="sidebar" id="sidebar-nav">
       <div class="brand">

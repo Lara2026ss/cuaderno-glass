@@ -416,22 +416,40 @@ process.on('unhandledRejection', (reason) => {
 // Iniciar servidor si se ejecuta directamente
 if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   app.listen(PORT, () => {
-    const fbStatus = firebaseAdminInitialized ? '🟢 ONLINE (Service Account Loaded)' : '🟡 DEGRADADO (Client Config Fallback)';
-    const groqStatus = process.env.GROQ_API_KEY ? '🟢 CONFIGURADO (Groq Llama 3.3 70B)' : '🔴 NO CONFIGURADO';
+    // 1. Inicializar trabajadores de fondo y servicios primero
+    startPriceMonitoringWorker();
+
+    // 2. Recopilar métricas útiles para diagnóstico
+    const memUsage = `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`;
+    const nodeVer = process.version;
+    const envMode = process.env.NODE_ENV || 'production';
+    const fbStatus = firebaseAdminInitialized ? '🟢 ONLINE (Service Account Certificada)' : '🟡 DEGRADADO (Client Config Fallback)';
+    const saStatus = process.env.FIREBASE_SERVICE_ACCOUNT ? '🟢 DETECTADA (Variable .env)' : (fs.existsSync(path.join(__dirname, 'firebase-service-account.json')) ? '🟢 DETECTADA (Archivo Local)' : '⚪ NO PROPORCIONADA');
+    const groqStatus = process.env.GROQ_API_KEY ? '🟢 CONFIGURADO (Groq Llama 3.3 70B Engine)' : '🔴 NO CONFIGURADO';
 
     console.log(`
-┌────────────────────────────────────────────────────────────────────────┐
-│  🚀 CUADERNO GLASS PRO 7.0 — SERVIDOR EN LÍNEA & CLOUD HUB BACKEND     │
-├────────────────────────────────────────────────────────────────────────┤
-│  🌐 Puerto Servidor   : ${PORT}                                       │
-│  🔥 Firebase Admin SDK: ${fbStatus}             │
-│  ⚡ Copilot AI Engine : ${groqStatus}            │
-│  🛡️ Protección SSRF   : 🟢 ACTIVA (Dominios Verificados)               │
-│  📊 Endpoint Telemetría: /api/logs                                     │
-└────────────────────────────────────────────────────────────────────────┘
+================================================================================
+🚀 CUADERNO GLASS PRO 7.0 — DIAGNÓSTICO & SERVIDOR DE PRODUCCIÓN INICIALIZADO
+================================================================================
+ 🌐 Puerto del Servidor   : ${PORT} (NODE_ENV: ${envMode})
+ 📦 Entorno Node.js       : ${nodeVer} (${process.platform} ${process.arch})
+ 🧠 Uso de Memoria RSS    : ${memUsage}
+ 🔥 Firebase Admin SDK    : ${fbStatus}
+ 🔑 Service Account JSON  : ${saStatus}
+ ⚡ Groq AI Copilot Engine: ${groqStatus}
+ 🛡️ Scraper & SSRF Shield : 🟢 ACTIVO (Dominios Whitelistados)
+ 🤖 Price Monitoring Worker: 🟢 ACTIVO (Intervalo: 30 min)
+ 📊 Rutas Registradas     : 8 Endpoints (/health, /api/firebase/config, /api/ai/chat, /api/logs, etc.)
+ 🔍 Endpoint Telemetría   : GET /api/logs
+================================================================================
     `);
-    logServerEvent('info', 'System', 'Servidor de Cuaderno Glass Pro 7.0 inicializado con éxito en Render');
-    startPriceMonitoringWorker();
+
+    logServerEvent('info', 'System', `Servidor Cuaderno Glass Pro 7.0 inicializado completamente en puerto ${PORT}`, {
+      nodeVersion: nodeVer,
+      memoryRss: memUsage,
+      firebaseAdmin: firebaseAdminInitialized,
+      hasGroqKey: !!process.env.GROQ_API_KEY
+    });
   });
 }
 

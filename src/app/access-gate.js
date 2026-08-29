@@ -35,11 +35,8 @@ class AccessGate {
     this.btnGuestEl = document.getElementById('btn-gate-guest');
     this.errorEl = document.getElementById('access-gate-error');
 
-    if (!this.gateEl || !this.shellEl) {
-      logger.error('AccessGate', 'No se encontraron los elementos del portón de acceso; se omite el bloqueo.');
-      this._unlock();
-      return;
-    }
+    // Desbloquear la suite e inicializar la aplicación inmediatamente
+    this._unlock();
 
     if (this.btnEl) {
       this.btnEl.addEventListener('click', () => this._handleLoginClick());
