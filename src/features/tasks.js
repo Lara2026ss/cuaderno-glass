@@ -196,7 +196,11 @@ export class TasksFeature {
 
     if (this.dashboardContainer) {
       this.dashboardContainer.innerHTML = '';
-      const pendingSlice = list.filter(t => !t.done && !t.completed).slice(0, 5);
+      
+      // FIX FASE 2: Desacoplar dashboard del filtro global de categorías
+      const fullList = store.get('tasks', []);
+      const pendingSlice = fullList.filter(t => !t.done && !t.completed).slice(0, 5);
+      
       if (pendingSlice.length === 0) {
         this.dashboardContainer.innerHTML = `
           <div style="text-align:center; padding:20px 10px; color:var(--text-soft); font-size:0.84rem;">

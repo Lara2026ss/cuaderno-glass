@@ -161,7 +161,7 @@
 
 /* Main Content */
 main {
-  padding: 26px 36px;
+  padding: 32px 42px;
   max-width: 1360px;
   width: 100%;
   box-sizing: border-box;
@@ -223,7 +223,7 @@ main {
 }
 
 .view-header {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 .view-header h1 {
   font-family: var(--font-display);
@@ -243,7 +243,7 @@ main {
   background: var(--glass-card);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  padding: 20px;
+  padding: 24px;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: var(--glass-shine), var(--glass-shadow);
@@ -385,6 +385,18 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 20px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Chips y Tags */

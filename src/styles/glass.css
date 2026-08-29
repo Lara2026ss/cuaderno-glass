@@ -3,20 +3,23 @@
    ========================================================= */
 
 :root {
-  --bg-base: #060914;
-  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.32) 0px, transparent 50%),
-             radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.24) 0px, transparent 50%),
-             radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.28) 0px, transparent 50%),
-             radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.26) 0px, transparent 50%);
+  /* Fondo base más sólido y elegante (Zinc 950) */
+  --bg-base: #09090b;
+  /* Mesh más sutil para no ahogar la vista */
+  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+             radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+             radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+             radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
   
-  --glass-surface: rgba(18, 24, 45, 0.72);
-  --glass-surface-hover: rgba(28, 36, 65, 0.85);
-  --glass-card: rgba(23, 30, 54, 0.62);
-  --glass-subtle: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-focus: rgba(129, 140, 248, 0.75);
-  --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
-  --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  /* Superficies con mejor contraste y jerarquía */
+  --glass-surface: rgba(15, 15, 20, 0.85); /* Sidebar y Modales */
+  --glass-surface-hover: rgba(24, 24, 32, 0.95);
+  --glass-card: rgba(24, 24, 27, 0.7); /* Tarjetas del panel (Zinc 900) */
+  --glass-subtle: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08); /* Bordes más sutiles */
+  --glass-border-focus: rgba(129, 140, 248, 0.6);
+  --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
   
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -25,7 +28,7 @@
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --primary-light: #818cf8;
-  --primary-glow: rgba(99, 102, 241, 0.45);
+  --primary-glow: rgba(99, 102, 241, 0.35);
   
   --accent-emerald: #10b981;
   --accent-coral: #f43f5e;
@@ -46,29 +49,29 @@
   --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
-  --radius-xl: 20px;
-  --radius-lg: 14px;
-  --radius-md: 10px;
+  --radius-xl: 16px; /* Bordes ligeramente más agudos para un look profesional */
+  --radius-lg: 12px;
+  --radius-md: 8px;
   --radius-sm: 6px;
   --radius-pill: 9999px;
   
-  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s ease-out;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="light"] {
-  --bg-base: #f8fafc;
-  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
-             radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.15) 0px, transparent 50%),
-             radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.18) 0px, transparent 50%);
-  --glass-surface: rgba(255, 255, 255, 0.85);
-  --glass-surface-hover: rgba(255, 255, 255, 0.96);
-  --glass-card: rgba(255, 255, 255, 0.9);
-  --glass-subtle: rgba(0, 0, 0, 0.04);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-focus: rgba(99, 102, 241, 0.6);
+  --bg-base: #f1f5f9;
+  --bg-mesh: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+             radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.06) 0px, transparent 50%),
+             radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+  --glass-surface: rgba(255, 255, 255, 0.95);
+  --glass-surface-hover: #ffffff;
+  --glass-card: rgba(255, 255, 255, 0.85);
+  --glass-subtle: rgba(0, 0, 0, 0.03);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-focus: rgba(99, 102, 241, 0.4);
   --glass-shine: inset 0 1px 1px 0 rgba(255, 255, 255, 1);
-  --glass-shadow: 0 20px 40px -10px rgba(100, 116, 139, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 12px 32px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.03);
   
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -122,7 +125,7 @@ body {
   filter: blur(140px);
   z-index: 0;
   pointer-events: none;
-  opacity: 0.42;
+  opacity: 0.15;
   animation: floatOrb 24s infinite ease-in-out alternate;
 }
 .orb-1 { width: 560px; height: 560px; background: #6366f1; top: -140px; left: -120px; }

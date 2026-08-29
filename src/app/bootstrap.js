@@ -157,6 +157,8 @@ class AppBootstrap {
 
     const updateProfileUI = () => {
       const user = store.get('user');
+      const hasApiKey = !!store.get('settings.firebaseConfig.apiKey');
+      
       if (user) {
         if (userName) userName.textContent = user.displayName || 'Usuario Google';
         if (userEmail) userEmail.textContent = user.email || 'Conectado a la nube';
@@ -170,7 +172,9 @@ class AppBootstrap {
         if (userName) userName.textContent = 'Modo Local / Demo';
         if (userEmail) userEmail.textContent = 'Sin conexión cloud';
         if (avatarImg) avatarImg.innerHTML = '👤';
-        if (authText) authText.textContent = 'Iniciar Sesión con Google';
+        if (authText) {
+          authText.textContent = hasApiKey ? 'Iniciar Sesión con Google' : 'Configurar Conexión Cloud';
+        }
       }
     };
 
@@ -190,13 +194,14 @@ class AppBootstrap {
     events.on('auth:logout', () => {
       updateProfileUI();
       this._renderConnectorsView();
-      toast.info('Sesión cerrada');
+      toast.info('SesiÃ³n cerrada');
     });
 
     if (authBtn) {
       authBtn.addEventListener('click', async () => {
         audio.soundClick();
         const user = store.get('user');
+        const hasApiKey = !!store.get('settings.firebaseConfig.apiKey');
 
         if (user) {
           try {
@@ -205,6 +210,12 @@ class AppBootstrap {
             toast.error('Error al cerrar sesión');
           }
         } else {
+          if (!hasApiKey) {
+            toast.info('Estás en Modo Local. Para iniciar sesión, primero configura tu API Key en los ajustes.');
+            modals.open('modal-settings');
+            return;
+          }
+
           try {
             authBtn.disabled = true;
             if (authText) authText.textContent = 'Abriendo Google...';
